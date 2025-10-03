@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import api from './services/api';
 import { GlucoseReading, Meal, Medication, LogEntry as LogEntryType, UserMedication, WeightReading, BloodPressureReading } from './types';
 import Header from '../components/Header';
+import Footer from '../components/Footer';
 import Dashboard from '../components/Dashboard';
 import ActivityPage from '../components/ActivityPage';
 import HistoryPage from '../components/HistoryPage';
@@ -220,23 +221,25 @@ const MainApp: React.FC = () => {
   };
 
   return (
-    <div className="h-full flex flex-col bg-slate-50 text-slate-800 font-sans">
+    <div className="h-full flex flex-col bg-bg-light dark:bg-slate-900 text-text-primary dark:text-slate-100 font-sans">
       <Header onOpenSettings={() => setIsMyMedicationsModalOpen(true)} />
-      
-      <main className="flex-grow container mx-auto px-4 md:px-6 py-6 overflow-hidden">
+
+      <main className="flex-grow container mx-auto px-4 md:px-6 py-1.5 sm:py-4 overflow-hidden">
         {renderContent()}
       </main>
 
-      <div className="fixed bottom-20 right-6">
+      <div className="fixed bottom-24 right-6">
         <button
+          type="button"
           onClick={() => setIsActionSheetOpen(true)}
-          className="bg-blue-600 text-white rounded-full p-4 shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-transform transform hover:scale-110 duration-200"
+          className="bg-gradient-to-br from-primary to-primary-dark text-white rounded-full p-4 shadow-fab hover:shadow-fab-hover focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 transition-all transform hover:scale-105 duration-300"
           aria-label="Add new log"
         >
           <PlusIcon className="w-8 h-8" />
         </button>
       </div>
 
+      <Footer />
       <BottomNavBar activePage={activePage} onNavigate={setActivePage} />
 
       <ActionBottomSheet

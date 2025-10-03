@@ -3,6 +3,7 @@ import { Meal, GlucoseReading, FoodItem } from '../types';
 import { analyzeMealFromImage } from '../src/services/api';
 import { CameraIcon, UploadIcon, XIcon } from './Icons';
 import Spinner from './Spinner';
+import NutritionDisplay from './NutritionDisplay';
 
 interface MealLogModalProps {
   isOpen: boolean;
@@ -15,7 +16,7 @@ interface MealLogModalProps {
 const MealLogModal: React.FC<MealLogModalProps> = ({ isOpen, onClose, onAddMeal, onAddReading, unit }) => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [analysisResult, setAnalysisResult] = useState<{ items: FoodItem[], total: { calories: number; protein: number; carbs: number; fat: number } } | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<{ items: FoodItem[], total: { calories: number; protein: number; carbs: number; fat: number; sugar: number } } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [logPostMealGlucose, setLogPostMealGlucose] = useState(false);
@@ -86,7 +87,7 @@ const MealLogModal: React.FC<MealLogModalProps> = ({ isOpen, onClose, onAddMeal,
       timestamp: mealTimestamp.toISOString(),
       photoUrl: previewUrl || undefined,
       foodItems: analysisResult?.items || [],
-      totalNutrition: analysisResult?.total || { calories: 0, protein: 0, carbs: 0, fat: 0 },
+      totalNutrition: analysisResult?.total || { calories: 0, protein: 0, carbs: 0, fat: 0, sugar: 0 },
       mealType: getMealType(mealTimestamp),
       source: 'photo_analysis',
     });
@@ -120,26 +121,26 @@ const MealLogModal: React.FC<MealLogModalProps> = ({ isOpen, onClose, onAddMeal,
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-6 relative animate-fade-in-up max-h-[90vh] overflow-y-auto">
-        <button onClick={onClose} className="absolute top-4 right-4 text-slate-500 hover:text-slate-700">
+      <div className="bg-white rounded-modal shadow-modal w-full max-w-lg p-6 relative animate-fade-in-up max-h-[90vh] overflow-y-auto">
+        <button onClick={onClose} className="absolute top-4 right-4 text-text-light hover:text-primary transition-all duration-300">
           <XIcon className="w-6 h-6" />
         </button>
-        <h2 className="text-2xl font-bold text-slate-800 mb-4">Log Meal</h2>
-        
+        <h2 className="text-2xl font-bold text-text-primary mb-5">Log Meal</h2>
+
         {!previewUrl ? (
           <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
             <button onClick={() => {
                 fileInputRef.current?.setAttribute('capture', 'environment');
                 fileInputRef.current?.click();
-            }} className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center text-slate-500 hover:bg-slate-50 hover:border-blue-500 transition-colors flex flex-col items-center justify-center">
-                <CameraIcon className="w-10 h-10 mx-auto text-slate-400 mb-2" />
+            }} className="border-2 border-dashed border-primary/30 rounded-card p-8 text-center text-text-secondary hover:bg-primary/5 hover:border-primary transition-all duration-300 flex flex-col items-center justify-center">
+                <CameraIcon className="w-10 h-10 mx-auto text-primary mb-2" />
                 <span>Take Picture</span>
             </button>
             <button onClick={() => {
                 fileInputRef.current?.removeAttribute('capture');
                 fileInputRef.current?.click();
-            }} className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center text-slate-500 hover:bg-slate-50 hover:border-blue-500 transition-colors flex flex-col items-center justify-center">
-                <UploadIcon className="w-10 h-10 mx-auto text-slate-400 mb-2" />
+            }} className="border-2 border-dashed border-primary/30 rounded-card p-8 text-center text-text-secondary hover:bg-primary/5 hover:border-primary transition-all duration-300 flex flex-col items-center justify-center">
+                <UploadIcon className="w-10 h-10 mx-auto text-primary mb-2" />
                 <span>Upload Photo</span>
             </button>
             <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
@@ -151,45 +152,26 @@ const MealLogModal: React.FC<MealLogModalProps> = ({ isOpen, onClose, onAddMeal,
         )}
 
         {previewUrl && !analysisResult && (
-          <button onClick={handleAnalyze} disabled={isLoading} className="w-full bg-blue-600 text-white font-semibold py-3 rounded-md hover:bg-blue-700 disabled:bg-slate-300 transition-colors flex items-center justify-center">
+          <button onClick={handleAnalyze} disabled={isLoading} className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab disabled:bg-slate-300 disabled:from-slate-300 disabled:to-slate-300 transition-all duration-300 flex items-center justify-center">
             {isLoading ? <Spinner /> : 'Analyze Meal'}
           </button>
         )}
-        
-        {error && <p className="text-red-500 mt-4 text-center">{error}</p>}
-        
+
+        {error && <p className="text-accent-pink mt-4 text-center">{error}</p>}
+
         {analysisResult && (
           <div className="mt-4 space-y-4">
-            <div>
-              <h3 className="font-semibold text-slate-700 mb-2">Analysis Results</h3>
-              <div className="bg-slate-100 p-4 rounded-lg space-y-2">
-                {analysisResult?.items?.map((item, index) => (
-                  <div key={index} className="flex justify-between text-sm">
-                    <span className="text-slate-800">{item.name}</span>
-                    <div className="text-slate-500 text-right">
-                      <div>{item.calories} cal</div>
-                      <div>{item.carbs}g carbs, {item.protein}g protein, {item.fat}g fat</div>
-                    </div>
-                  </div>
-                ))}
-                {analysisResult?.total && (
-                  <div className="border-t border-slate-300 pt-2 mt-2 flex justify-between font-bold">
-                    <span className="text-slate-800">Total</span>
-                    <div className="text-blue-600 text-right">
-                      <div>{analysisResult.total.calories} calories</div>
-                      <div>{analysisResult.total.carbs}g carbs, {analysisResult.total.protein}g protein, {analysisResult.total.fat}g fat</div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+            <NutritionDisplay
+              items={analysisResult.items}
+              total={analysisResult.total}
+            />
 
             <div className="flex items-center">
-              <input type="checkbox" id="log-glucose" checked={logPostMealGlucose} onChange={(e) => setLogPostMealGlucose(e.target.checked)} className="h-4 w-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500" />
-              <label htmlFor="log-glucose" className="ml-2 block text-sm text-slate-700">Remind me to log post-meal glucose in 2 hours</label>
+              <input type="checkbox" id="log-glucose" checked={logPostMealGlucose} onChange={(e) => setLogPostMealGlucose(e.target.checked)} className="h-4 w-4 text-primary border-primary/30 rounded focus:ring-primary" />
+              <label htmlFor="log-glucose" className="ml-2 block text-sm text-text-secondary">Remind me to log post-meal glucose in 2 hours</label>
             </div>
 
-            <button onClick={handleSubmit} className="w-full bg-green-600 text-white font-semibold py-3 rounded-md hover:bg-green-700 transition-colors">
+            <button onClick={handleSubmit} className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300">
               Confirm and Save Meal
             </button>
           </div>

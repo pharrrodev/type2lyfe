@@ -14,6 +14,7 @@ import {
 } from '../src/services/api';
 import { CalendarClockIcon, DropletIcon, ForkSpoonIcon, PillIcon, PencilIcon, CameraIcon, MicIcon, UploadIcon, WeightScaleIcon, BloodPressureIcon, SquareIcon } from './Icons';
 import Spinner from './Spinner';
+import NutritionDisplay from './NutritionDisplay';
 // FIX: The 'LiveSession' type is not exported from '@google/genai'. It has been removed.
 import { GoogleGenAI, Modality, Blob } from '@google/genai';
 
@@ -103,7 +104,7 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
     const [mealCarbs, setMealCarbs] = useState('');
     const [mealImageFile, setMealImageFile] = useState<File | null>(null);
     const [mealPreviewUrl, setMealPreviewUrl] = useState<string | null>(null);
-    const [analysisResult, setAnalysisResult] = useState<{ foodItems: FoodItem[], totalNutrition: FoodItem['nutrition'] } | null>(null);
+    const [analysisResult, setAnalysisResult] = useState<{ items: FoodItem[], total: { calories: number; protein: number; carbs: number; fat: number; sugar: number } } | null>(null);
     
     // --- Medication states ---
     const [medLogMode, setMedLogMode] = useState<'voice' | 'manual'>('voice');
@@ -160,8 +161,11 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
             } else {
                 setError("Couldn't understand the reading. Please try again.");
             }
-        } catch (e) { setError('An error occurred during parsing.'); } 
-        finally { setIsLoading(false); }
+        } catch (e) { setError('An error occurred during parsing.'); }
+        finally {
+            setIsLoading(false);
+            listeningForRef.current = null; // Clear to prevent re-processing
+        }
     }, [unit]);
 
     const processMedicationSpeechResult = useCallback(async (text: string) => {
@@ -193,8 +197,11 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
             } else {
                 setError("Couldn't understand the weight. Please try again.");
             }
-        } catch (e) { setError('An error occurred during parsing.'); } 
-        finally { setIsLoading(false); }
+        } catch (e) { setError('An error occurred during parsing.'); }
+        finally {
+            setIsLoading(false);
+            listeningForRef.current = null; // Clear to prevent re-processing
+        }
     }, []);
 
     const handleParseBloodPressure = useCallback(async (textToParse: string) => {
@@ -217,8 +224,6 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
 
     // --- Real-time Audio Logic ---
     const stopListening = useCallback(async () => {
-        const currentListeningFor = listeningForRef.current;
-        listeningForRef.current = null;
         setIsListening(false);
         if (streamRef.current) {
             streamRef.current.getTracks().forEach(track => track.stop());
@@ -236,37 +241,46 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
             sessionRef.current.close();
             sessionRef.current = null;
         }
-        // Need this to trigger confirm screen
-        if (currentTranscript) {
-            if (currentListeningFor === 'glucose') handleParseGlucose(currentTranscript);
-            else if (currentListeningFor === 'medication') processMedicationSpeechResult(currentTranscript);
-            else if (currentListeningFor === 'weight') handleParseWeight(currentTranscript);
-            else if (currentListeningFor === 'blood_pressure') handleParseBloodPressure(currentTranscript);
-        }
-
-    }, [currentTranscript, handleParseGlucose, processMedicationSpeechResult, handleParseWeight, handleParseBloodPressure]);
+        // Processing happens in useEffect below - don't process here to avoid race conditions
+    }, []); // No dependencies - stable function
 
 
     const startListening = useCallback(async (mode: LogType) => {
-        if (isListening) return;
+        if (isListening) {
+            console.log('🎤 Already listening, ignoring start request');
+            return;
+        }
 
+        console.log('🎤 Starting listening for mode:', mode);
         setIsListening(true);
         setError('');
         setCurrentTranscript('');
         listeningForRef.current = mode;
 
         if (!aiRef.current) {
-            aiRef.current = new GoogleGenAI({ apiKey: process.env.API_KEY! });
+            const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+            console.log('🔑 API Key present:', !!apiKey);
+            if (!apiKey) {
+                setError('Gemini API key not configured. Please add VITE_GEMINI_API_KEY to .env.local');
+                setIsListening(false);
+                listeningForRef.current = null;
+                return;
+            }
+            aiRef.current = new GoogleGenAI({ apiKey });
         }
 
         try {
+            console.log('🎤 Requesting microphone access...');
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             streamRef.current = stream;
+            console.log('🎤 Microphone access granted');
 
+            console.log('🎤 Connecting to Gemini Live API...');
             const sessionPromise = aiRef.current.live.connect({
                 model: 'gemini-2.5-flash-native-audio-preview-09-2025',
                 callbacks: {
                     onopen: () => {
+                        console.log('🎤 Gemini session opened');
                         inputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
                         const source = inputAudioContextRef.current.createMediaStreamSource(stream);
                         const scriptProcessor = inputAudioContextRef.current.createScriptProcessor(4096, 1, 1);
@@ -281,19 +295,23 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
                         };
                         source.connect(scriptProcessor);
                         scriptProcessor.connect(inputAudioContextRef.current.destination);
+                        console.log('🎤 Audio processing pipeline connected');
                     },
                     onmessage: async (message) => {
                         if (message.serverContent?.inputTranscription) {
                             const text = message.serverContent.inputTranscription.text;
+                            console.log('🎤 Transcription received:', text);
                             setCurrentTranscript(prev => prev + text);
                         }
                     },
                     onerror: (e) => {
-                        console.error('Live session error:', e);
+                        console.error('🎤 Live session error:', e);
                         setError('A real-time connection error occurred.');
                         stopListening();
                     },
-                    onclose: () => { /* Connection closed */ },
+                    onclose: () => {
+                        console.log('🎤 Gemini session closed');
+                    },
                 },
                 config: {
                     responseModalities: [Modality.AUDIO],
@@ -301,12 +319,14 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
                 },
             });
             sessionRef.current = await sessionPromise;
+            console.log('🎤 Session connected successfully');
         } catch (err) {
-            console.error('Error starting audio session:', err);
-            setError('Could not access the microphone.');
+            console.error('🎤 Error starting audio session:', err);
+            setError('Could not access the microphone. Please check permissions.');
             setIsListening(false);
+            listeningForRef.current = null;
         }
-    }, [isListening, stopListening]);
+    }, [isListening]); // Added isListening back to dependencies
     
     useEffect(() => {
       return () => {
@@ -314,18 +334,38 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
       };
     }, [stopListening]);
 
+    // Process voice input when listening stops
     useEffect(() => {
         if (!isListening && currentTranscript && listeningForRef.current) {
              const mode = listeningForRef.current;
-             listeningForRef.current = null; // Prevent re-triggering
-             if (mode === 'glucose') handleParseGlucose(currentTranscript);
-             else if (mode === 'medication') processMedicationSpeechResult(currentTranscript);
-             else if (mode === 'weight') handleParseWeight(currentTranscript);
-             else if (mode === 'blood_pressure') handleParseBloodPressure(currentTranscript);
+             const transcriptToProcess = currentTranscript;
+
+             // Clear transcript immediately to prevent re-processing on next render
+             setCurrentTranscript('');
+
+             // Process based on mode (this will trigger parsing and eventually clear listeningForRef)
+             if (mode === 'glucose') handleParseGlucose(transcriptToProcess);
+             else if (mode === 'medication') processMedicationSpeechResult(transcriptToProcess);
+             else if (mode === 'weight') handleParseWeight(transcriptToProcess);
+             else if (mode === 'blood_pressure') handleParseBloodPressure(transcriptToProcess);
         }
     }, [isListening, currentTranscript, handleParseGlucose, processMedicationSpeechResult, handleParseWeight, handleParseBloodPressure]);
 
     // --- General Functions ---
+
+    // Clear voice state when switching log types
+    useEffect(() => {
+        // Stop any active listening
+        if (isListening) {
+            stopListening();
+        }
+        // Clear transcript and listening ref
+        setCurrentTranscript('');
+        listeningForRef.current = null;
+        setError('');
+        setIsLoading(false);
+    }, [activeLogType]); // Run when log type changes
+
     useEffect(() => {
         if (userMedications.length > 0 && !selectedMedId) {
             setSelectedMedId(userMedications[0].id);
@@ -358,7 +398,11 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
         if (isListening) {
             stopListening();
         } else {
-            resetGlucoseState();
+            // Don't call resetGlucoseState() here - it calls stopListening() which creates race condition
+            // Just clear the necessary state and start listening
+            setGlucoseParsedData(null);
+            setError('');
+            setGlucoseVoiceStep('say_reading');
             startListening('glucose');
         }
     };
@@ -535,15 +579,20 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
                 const carbsNum = parseInt(mealCarbs, 10) || 0;
                 if (!mealDescription.trim()) return;
                 mealData = {
-                    foodItems: [{ name: mealDescription, calories: 0, protein: 0, carbs: carbsNum, fat: 0 }],
-                    totalNutrition: { calories: 0, protein: 0, carbs: carbsNum, fat: 0 },
+                    foodItems: [{ name: mealDescription, calories: 0, protein: 0, carbs: carbsNum, fat: 0, sugar: 0 }],
+                    totalNutrition: { calories: 0, protein: 0, carbs: carbsNum, fat: 0, sugar: 0 },
                     notes: mealDescription,
                     source: 'manual',
                 };
                 break;
             case 'photo':
                 if (!analysisResult) return;
-                mealData = { ...analysisResult, photoUrl: mealPreviewUrl || undefined, source: 'photo_analysis' };
+                mealData = {
+                    foodItems: analysisResult.items,
+                    totalNutrition: analysisResult.total,
+                    photoUrl: mealPreviewUrl || undefined,
+                    source: 'photo_analysis'
+                };
                 break;
         }
         if (mealData) {
@@ -648,7 +697,11 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
     const handleWeightToggleListen = () => {
         if (isListening) stopListening();
         else {
-            resetWeightState();
+            // Don't call resetWeightState() here - it calls stopListening() which creates race condition
+            // Just clear the necessary state and start listening
+            setWeightParsedData(null);
+            setError('');
+            setWeightVoiceStep('say_reading');
             startListening('weight');
         }
     };
@@ -839,46 +892,46 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
         const renderVoiceContent = () => (
             <div>
                 {glucoseVoiceStep === 'say_reading' && (
-                    <div className="text-center">
-                        <p className="text-slate-600 mb-4">{isListening && listeningForRef.current === 'glucose' ? 'Tap icon to stop recording.' : 'Tap icon and say your glucose reading.'}</p>
-                        <button 
-                            type="button" 
-                            onClick={handleGlucoseToggleListen} 
-                            disabled={isLoading} 
-                            className={`mx-auto w-20 h-20 rounded-full flex items-center justify-center transition-colors ${isListening && listeningForRef.current === 'glucose' ? 'bg-red-500 text-white' : 'bg-blue-600 text-white hover:bg-blue-700'} disabled:bg-slate-400`}
+                    <div className="text-center py-4">
+                        <p className="text-text-secondary dark:text-slate-400 mb-4 font-medium">{isListening && listeningForRef.current === 'glucose' ? 'Tap icon to stop recording.' : 'Tap icon and say your glucose reading.'}</p>
+                        <button
+                            type="button"
+                            onClick={handleGlucoseToggleListen}
+                            disabled={isLoading}
+                            className={`mx-auto w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 ${isListening && listeningForRef.current === 'glucose' ? 'bg-accent-pink text-white shadow-lg' : 'bg-gradient-to-br from-primary to-primary-dark text-white hover:shadow-fab'} disabled:bg-slate-300`}
                         >
                             {isLoading ? <Spinner /> : (isListening && listeningForRef.current === 'glucose' ? <SquareIcon className="w-7 h-7" /> : <MicIcon className="w-8 h-8" />)}
                         </button>
-                        <p className="text-slate-700 mt-4 min-h-[24px] px-2">{listeningForRef.current === 'glucose' ? currentTranscript || (isListening ? <span className="text-slate-500">Listening...</span> : '') : ''}</p>
+                        <p className="text-text-primary dark:text-slate-100 mt-4 min-h-[24px] px-2">{listeningForRef.current === 'glucose' ? currentTranscript || (isListening ? <span className="text-text-secondary dark:text-slate-400">Listening...</span> : '') : ''}</p>
 
                     </div>
                 )}
                 {glucoseVoiceStep === 'confirm' && glucoseParsedData && (
-                    <div className="p-4 bg-slate-100 rounded-lg">
+                    <div className="p-5 bg-primary/5 dark:bg-primary/10 rounded-card border-2 border-primary/30 dark:border-primary/40">
                         <div className="text-center">
-                            <p className="text-slate-600">Is this correct?</p>
-                            <p className="text-3xl font-bold text-blue-600 my-2">{glucoseParsedData.value} <span className="text-lg font-normal">{unit}</span></p>
-                            <p className="text-slate-500 capitalize">{glucoseParsedData.context.replace('_', ' ')}</p>
+                            <p className="text-text-secondary dark:text-slate-400 font-medium">Is this correct?</p>
+                            <p className="text-4xl font-bold text-primary dark:text-primary-light my-2">{glucoseParsedData.value} <span className="text-lg font-normal text-text-light dark:text-slate-400">{unit}</span></p>
+                            <p className="text-text-secondary dark:text-slate-400 capitalize font-medium">{glucoseParsedData.context.replace('_', ' ')}</p>
                         </div>
                         <div className="grid grid-cols-2 gap-3 mt-6">
-                            <button type="button" onClick={resetGlucoseState} className="w-full bg-slate-200 text-slate-700 font-semibold py-3 rounded-md hover:bg-slate-300 transition-colors">Start Over</button>
-                            <button type="button" onClick={handleVoiceGlucoseSubmit} className="w-full bg-green-600 text-white font-semibold py-3 rounded-md hover:bg-green-700 transition-colors">Confirm & Save</button>
+                            <button type="button" onClick={resetGlucoseState} className="w-full bg-white dark:bg-slate-700 border-2 border-primary/20 dark:border-slate-600 text-text-primary dark:text-slate-100 font-semibold py-3 rounded-button hover:bg-primary/5 dark:hover:bg-slate-600 hover:border-primary dark:hover:border-primary-light transition-all duration-300 shadow-card">Start Over</button>
+                            <button type="button" onClick={handleVoiceGlucoseSubmit} className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300">Confirm & Save</button>
                         </div>
                     </div>
                 )}
             </div>
         );
-    
+
         const renderManualContent = () => (
             <form onSubmit={handleManualGlucoseSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <label htmlFor="glucose-value" className="block text-sm font-medium text-slate-700">Value ({unit})</label>
-                        <input type="number" id="glucose-value" value={manualGlucoseValue} onChange={e => setManualGlucoseValue(e.target.value)} step={unit === 'mmol/L' ? '0.1' : '1'} required className="mt-1 block w-full bg-white text-slate-900 placeholder:text-slate-400 rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2" />
+                        <label htmlFor="glucose-value" className="block text-sm font-semibold text-text-primary dark:text-slate-100 mb-2">Value ({unit})</label>
+                        <input type="number" id="glucose-value" value={manualGlucoseValue} onChange={e => setManualGlucoseValue(e.target.value)} step={unit === 'mmol/L' ? '0.1' : '1'} required className="block w-full bg-white dark:bg-slate-700 text-text-primary dark:text-slate-100 placeholder:text-text-light dark:placeholder:text-slate-400 rounded-button border-2 border-primary/20 dark:border-slate-600 shadow-sm focus:border-primary dark:focus:border-primary-light focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300 p-3" />
                     </div>
                     <div>
-                        <label htmlFor="glucose-context" className="block text-sm font-medium text-slate-700">Context</label>
-                        <select id="glucose-context" value={manualGlucoseContext} onChange={e => setManualGlucoseContext(e.target.value as GlucoseReading['context'])} className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-slate-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md bg-white">
+                        <label htmlFor="glucose-context" className="block text-sm font-semibold text-text-primary dark:text-slate-100 mb-2">Context</label>
+                        <select id="glucose-context" value={manualGlucoseContext} onChange={e => setManualGlucoseContext(e.target.value as GlucoseReading['context'])} className="block w-full bg-white dark:bg-slate-700 text-text-primary dark:text-slate-100 rounded-button border-2 border-primary/20 dark:border-slate-600 focus:border-primary dark:focus:border-primary-light focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300 px-3 py-3">
                             <option value="random">Random</option>
                             <option value="fasting">Fasting</option>
                             <option value="before_meal">Before Meal</option>
@@ -887,31 +940,31 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
                         </select>
                     </div>
                 </div>
-                {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-                <button type="submit" className="w-full bg-blue-600 text-white font-semibold py-2 rounded-md hover:bg-blue-700 transition-colors">Save Glucose</button>
+                {error && <p className="text-accent-pink text-sm text-center font-medium">{error}</p>}
+                <button type="submit" className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300">Save Glucose</button>
             </form>
         );
-        
+
         const renderPhotoContent = () => (
             <div>
                 {glucosePhotoStep === 'select_photo' && (
                     <div>
                         {!glucosePreviewUrl ? (
                             <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <button type="button" onClick={() => { glucoseFileInputRef.current?.setAttribute('capture', 'environment'); glucoseFileInputRef.current?.click(); }} className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center text-slate-500 hover:bg-slate-50 hover:border-blue-500 transition-colors flex flex-col items-center justify-center">
-                                    <CameraIcon className="w-10 h-10 mx-auto text-slate-400 mb-2" />
+                                <button type="button" onClick={() => { glucoseFileInputRef.current?.setAttribute('capture', 'environment'); glucoseFileInputRef.current?.click(); }} className="border-2 border-dashed border-primary/30 dark:border-primary/40 rounded-card p-8 text-center text-text-secondary dark:text-slate-400 hover:bg-primary/5 dark:hover:bg-primary/10 hover:border-primary dark:hover:border-primary-light transition-all duration-300 flex flex-col items-center justify-center">
+                                    <CameraIcon className="w-10 h-10 mx-auto text-primary dark:text-primary-light mb-2" />
                                     <span>Take Picture</span>
                                 </button>
-                                <button type="button" onClick={() => { glucoseFileInputRef.current?.removeAttribute('capture'); glucoseFileInputRef.current?.click(); }} className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center text-slate-500 hover:bg-slate-50 hover:border-blue-500 transition-colors flex flex-col items-center justify-center">
-                                    <UploadIcon className="w-10 h-10 mx-auto text-slate-400 mb-2" />
+                                <button type="button" onClick={() => { glucoseFileInputRef.current?.removeAttribute('capture'); glucoseFileInputRef.current?.click(); }} className="border-2 border-dashed border-primary/30 dark:border-primary/40 rounded-card p-8 text-center text-text-secondary dark:text-slate-400 hover:bg-primary/5 dark:hover:bg-primary/10 hover:border-primary dark:hover:border-primary-light transition-all duration-300 flex flex-col items-center justify-center">
+                                    <UploadIcon className="w-10 h-10 mx-auto text-primary dark:text-primary-light mb-2" />
                                     <span>Upload Photo</span>
                                 </button>
                                 <input type="file" accept="image/*" ref={glucoseFileInputRef} onChange={handleGlucoseFileChange} className="hidden" />
                             </div>
                         ) : (
                             <div className="space-y-4">
-                                <img src={glucosePreviewUrl} alt="Glucose meter preview" className="rounded-lg w-full max-h-48 object-contain" />
-                                <button type="button" onClick={handleGlucosePhotoAnalyze} disabled={isLoading} className="w-full bg-blue-600 text-white font-semibold py-3 rounded-md hover:bg-blue-700 disabled:bg-slate-300 transition-colors flex items-center justify-center">
+                                <img src={glucosePreviewUrl} alt="Glucose meter preview" className="rounded-card w-full max-h-48 object-contain shadow-card" />
+                                <button type="button" onClick={handleGlucosePhotoAnalyze} disabled={isLoading} className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300 disabled:from-slate-300 disabled:to-slate-300 flex items-center justify-center">
                                     {isLoading ? <Spinner /> : 'Analyze Reading'}
                                 </button>
                             </div>
@@ -919,17 +972,17 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
                     </div>
                 )}
                 {glucosePhotoStep === 'confirm' && glucoseParsedData && (
-                     <div className="mt-4 p-4 bg-slate-100 rounded-lg">
+                     <div className="mt-4 p-5 bg-primary/5 dark:bg-primary/10 rounded-card border-2 border-primary/30 dark:border-primary/40">
                         <div className="text-center">
-                            <p className="text-slate-600">Is this correct?</p>
-                            <p className="text-3xl font-bold text-blue-600 my-2">{glucoseParsedData.value} <span className="text-lg font-normal">{unit}</span></p>
-                            <p className="text-slate-500 capitalize">{glucoseParsedData.context.replace('_', ' ')}</p>
+                            <p className="text-text-secondary dark:text-slate-400 font-medium">Is this correct?</p>
+                            <p className="text-4xl font-bold text-primary dark:text-primary-light my-2">{glucoseParsedData.value} <span className="text-lg font-normal text-text-light dark:text-slate-400">{unit}</span></p>
+                            <p className="text-text-secondary dark:text-slate-400 capitalize font-medium">{glucoseParsedData.context.replace('_', ' ')}</p>
                         </div>
                         <div className="grid grid-cols-2 gap-3 mt-6">
-                            <button type="button" onClick={resetGlucoseState} className="w-full bg-slate-200 text-slate-700 font-semibold py-3 rounded-md hover:bg-slate-300 transition-colors">
+                            <button type="button" onClick={resetGlucoseState} className="w-full bg-white dark:bg-slate-700 border-2 border-primary/20 dark:border-slate-600 text-text-primary dark:text-slate-100 font-semibold py-3 rounded-button hover:bg-primary/5 dark:hover:bg-slate-600 hover:border-primary dark:hover:border-primary-light transition-all duration-300 shadow-card">
                                 Start Over
                             </button>
-                            <button type="button" onClick={handlePhotoGlucoseSubmit} className="w-full bg-green-600 text-white font-semibold py-3 rounded-md hover:bg-green-700 transition-colors">
+                            <button type="button" onClick={handlePhotoGlucoseSubmit} className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300">
                                 Confirm & Save
                             </button>
                         </div>
@@ -937,15 +990,15 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
                 )}
             </div>
         );
-    
+
         return (
             <div>
-                <div className="flex justify-center items-center rounded-lg bg-slate-100 p-1 mb-4">
-                    <button type="button" onClick={() => { setGlucoseLogMode('voice'); setError(''); }} className={`px-3 py-1.5 text-sm font-medium rounded-md flex items-center space-x-2 transition-colors ${glucoseLogMode === 'voice' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600 hover:bg-slate-200'}`}><MicIcon className="w-4 h-4"/><span>Voice</span></button>
-                    <button type="button" onClick={() => { setGlucoseLogMode('manual'); setError(''); }} className={`px-3 py-1.5 text-sm font-medium rounded-md flex items-center space-x-2 transition-colors ${glucoseLogMode === 'manual' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600 hover:bg-slate-200'}`}><PencilIcon className="w-4 h-4"/><span>Manual</span></button>
-                    <button type="button" onClick={() => { setGlucoseLogMode('photo'); setError(''); }} className={`px-3 py-1.5 text-sm font-medium rounded-md flex items-center space-x-2 transition-colors ${glucoseLogMode === 'photo' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600 hover:bg-slate-200'}`}><CameraIcon className="w-4 h-4"/><span>Photo</span></button>
+                <div className="flex justify-center items-center rounded-card bg-primary/5 dark:bg-slate-700 p-1 mb-4 border-2 border-primary/20 dark:border-slate-600">
+                    <button type="button" onClick={() => { setGlucoseLogMode('voice'); setError(''); }} className={`px-3 py-1.5 text-sm font-semibold rounded-button flex items-center space-x-2 transition-all duration-300 ${glucoseLogMode === 'voice' ? 'bg-white dark:bg-slate-600 text-primary dark:text-primary-light shadow-card' : 'text-text-light dark:text-slate-400 hover:bg-white dark:hover:bg-slate-600 hover:bg-opacity-50'}`}><MicIcon className="w-4 h-4"/><span>Voice</span></button>
+                    <button type="button" onClick={() => { setGlucoseLogMode('manual'); setError(''); }} className={`px-3 py-1.5 text-sm font-semibold rounded-button flex items-center space-x-2 transition-all duration-300 ${glucoseLogMode === 'manual' ? 'bg-white dark:bg-slate-600 text-primary dark:text-primary-light shadow-card' : 'text-text-light dark:text-slate-400 hover:bg-white dark:hover:bg-slate-600 hover:bg-opacity-50'}`}><PencilIcon className="w-4 h-4"/><span>Manual</span></button>
+                    <button type="button" onClick={() => { setGlucoseLogMode('photo'); setError(''); }} className={`px-3 py-1.5 text-sm font-semibold rounded-button flex items-center space-x-2 transition-all duration-300 ${glucoseLogMode === 'photo' ? 'bg-white dark:bg-slate-600 text-primary dark:text-primary-light shadow-card' : 'text-text-light dark:text-slate-400 hover:bg-white dark:hover:bg-slate-600 hover:bg-opacity-50'}`}><CameraIcon className="w-4 h-4"/><span>Photo</span></button>
                 </div>
-                {error && !isLoading && <p className="text-red-500 text-center mt-4 text-sm mb-2">{error}</p>}
+                {error && !isLoading && <p className="text-accent-pink text-center mt-4 text-sm mb-2 font-medium">{error}</p>}
                 {glucoseLogMode === 'voice' && renderVoiceContent()}
                 {glucoseLogMode === 'manual' && renderManualContent()}
                 {glucoseLogMode === 'photo' && renderPhotoContent()}
@@ -955,56 +1008,45 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
 
     const renderMealContent = () => (
         <form onSubmit={handleMealSubmit}>
-            <div className="flex justify-center items-center rounded-lg bg-slate-100 p-1 mb-4">
-                <button type="button" onClick={() => setMealLogMode('manual')} className={`px-3 py-1.5 text-sm font-medium rounded-md flex items-center space-x-2 transition-colors ${mealLogMode === 'manual' ? 'bg-white text-green-700 shadow-sm' : 'text-slate-600 hover:bg-slate-200'}`}><PencilIcon className="w-4 h-4"/><span>Manual</span></button>
-                <button type="button" onClick={() => setMealLogMode('photo')} className={`px-3 py-1.5 text-sm font-medium rounded-md flex items-center space-x-2 transition-colors ${mealLogMode === 'photo' ? 'bg-white text-green-700 shadow-sm' : 'text-slate-600 hover:bg-slate-200'}`}><CameraIcon className="w-4 h-4"/><span>Photo</span></button>
+            <div className="flex justify-center items-center rounded-card bg-primary/5 dark:bg-slate-700 p-1 mb-4 border-2 border-primary/20 dark:border-slate-600">
+                <button type="button" onClick={() => setMealLogMode('manual')} className={`px-3 py-1.5 text-sm font-semibold rounded-button flex items-center space-x-2 transition-all duration-300 ${mealLogMode === 'manual' ? 'bg-white dark:bg-slate-600 text-primary dark:text-primary-light shadow-card' : 'text-text-light dark:text-slate-400 hover:bg-white dark:hover:bg-slate-600 hover:bg-opacity-50'}`}><PencilIcon className="w-4 h-4"/><span>Manual</span></button>
+                <button type="button" onClick={() => setMealLogMode('photo')} className={`px-3 py-1.5 text-sm font-semibold rounded-button flex items-center space-x-2 transition-all duration-300 ${mealLogMode === 'photo' ? 'bg-white dark:bg-slate-600 text-primary dark:text-primary-light shadow-card' : 'text-text-light dark:text-slate-400 hover:bg-white dark:hover:bg-slate-600 hover:bg-opacity-50'}`}><CameraIcon className="w-4 h-4"/><span>Photo</span></button>
             </div>
             {mealLogMode === 'manual' && (
                 <div className="space-y-4">
                     <div>
-                        <label htmlFor="meal-description" className="block text-sm font-medium text-slate-700">Description</label>
-                        <input type="text" id="meal-description" value={mealDescription} onChange={e => setMealDescription(e.target.value)} placeholder="e.g., Chicken salad sandwich" required className="mt-1 block w-full bg-white text-slate-900 placeholder:text-slate-400 rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2" />
+                        <label htmlFor="meal-description" className="block text-sm font-semibold text-text-primary dark:text-slate-100 mb-2">Description</label>
+                        <input type="text" id="meal-description" value={mealDescription} onChange={e => setMealDescription(e.target.value)} placeholder="e.g., Chicken salad sandwich" required className="block w-full bg-white dark:bg-slate-700 text-text-primary dark:text-slate-100 placeholder:text-text-light dark:placeholder:text-slate-400 rounded-button border-2 border-primary/20 dark:border-slate-600 shadow-sm focus:border-primary dark:focus:border-primary-light focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300 p-3" />
                     </div>
                     <div>
-                        <label htmlFor="meal-carbs" className="block text-sm font-medium text-slate-700">Total Carbs (grams)</label>
-                        <input type="number" id="meal-carbs" value={mealCarbs} onChange={e => setMealCarbs(e.target.value)} placeholder="e.g., 45" className="mt-1 block w-full bg-white text-slate-900 placeholder:text-slate-400 rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2" />
+                        <label htmlFor="meal-carbs" className="block text-sm font-semibold text-text-primary dark:text-slate-100 mb-2">Total Carbs (grams)</label>
+                        <input type="number" id="meal-carbs" value={mealCarbs} onChange={e => setMealCarbs(e.target.value)} placeholder="e.g., 45" className="block w-full bg-white dark:bg-slate-700 text-text-primary dark:text-slate-100 placeholder:text-text-light dark:placeholder:text-slate-400 rounded-button border-2 border-primary/20 dark:border-slate-600 shadow-sm focus:border-primary dark:focus:border-primary-light focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300 p-3" />
                     </div>
-                    <button type="submit" className="w-full bg-green-600 text-white font-semibold py-2 rounded-md hover:bg-green-700 transition-colors">Save Meal</button>
+                    <button type="submit" className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300">Save Meal</button>
                 </div>
             )}
             {mealLogMode === 'photo' && (
                 <div className="space-y-4">
                     {!mealPreviewUrl ? (
                         <div className="grid grid-cols-2 gap-4">
-                            <button type="button" onClick={() => { mealFileInputRef.current?.setAttribute('capture', 'environment'); mealFileInputRef.current?.click(); }} className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center text-slate-500 hover:bg-slate-50 hover:border-green-500 transition-colors flex flex-col items-center justify-center"><CameraIcon className="w-8 h-8 text-slate-400 mb-2" /><span>Take Picture</span></button>
-                            <button type="button" onClick={() => { mealFileInputRef.current?.removeAttribute('capture'); mealFileInputRef.current?.click(); }} className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center text-slate-500 hover:bg-slate-50 hover:border-green-500 transition-colors flex flex-col items-center justify-center"><UploadIcon className="w-8 h-8 text-slate-400 mb-2" /><span>Upload</span></button>
+                            <button type="button" onClick={() => { mealFileInputRef.current?.setAttribute('capture', 'environment'); mealFileInputRef.current?.click(); }} className="border-2 border-dashed border-primary/30 dark:border-primary/40 rounded-card p-6 text-center text-text-secondary dark:text-slate-400 hover:bg-primary/5 dark:hover:bg-primary/10 hover:border-primary dark:hover:border-primary-light transition-all duration-300 flex flex-col items-center justify-center"><CameraIcon className="w-8 h-8 text-primary dark:text-primary-light mb-2" /><span>Take Picture</span></button>
+                            <button type="button" onClick={() => { mealFileInputRef.current?.removeAttribute('capture'); mealFileInputRef.current?.click(); }} className="border-2 border-dashed border-primary/30 dark:border-primary/40 rounded-card p-6 text-center text-text-secondary dark:text-slate-400 hover:bg-primary/5 dark:hover:bg-primary/10 hover:border-primary dark:hover:border-primary-light transition-all duration-300 flex flex-col items-center justify-center"><UploadIcon className="w-8 h-8 text-primary dark:text-primary-light mb-2" /><span>Upload</span></button>
                             <input type="file" accept="image/*" ref={mealFileInputRef} onChange={handleMealFileChange} className="hidden" />
                         </div>
-                    ) : <img src={mealPreviewUrl} alt="Meal preview" className="rounded-lg w-full max-h-48 object-contain" />}
-                    {mealPreviewUrl && !analysisResult && <button type="button" onClick={handleMealAnalyze} disabled={isLoading} className="w-full bg-blue-600 text-white font-semibold py-2 rounded-md hover:bg-blue-700 disabled:bg-slate-300 flex items-center justify-center">{isLoading ? <Spinner /> : 'Analyze Meal'}</button>}
+                    ) : <img src={mealPreviewUrl} alt="Meal preview" className="rounded-card w-full max-h-48 object-contain shadow-card" />}
+                    {mealPreviewUrl && !analysisResult && <button type="button" onClick={handleMealAnalyze} disabled={isLoading} className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300 disabled:from-slate-300 disabled:to-slate-300 flex items-center justify-center">{isLoading ? <Spinner /> : 'Analyze Meal'}</button>}
                 </div>
             )}
-            {error && <p className="text-red-500 text-center text-sm mt-2">{error}</p>}
+            {error && <p className="text-accent-pink text-center text-sm mt-2 font-medium">{error}</p>}
             {analysisResult && (
                 <div className="mt-4 space-y-3">
-                    <div>
-                        <h3 className="font-semibold text-slate-700 mb-1">Analysis Results</h3>
-                        <div className="bg-slate-100 p-3 rounded-lg space-y-1">
-                            {analysisResult.foodItems.map((item, index) => (
-                            <div key={index} className="flex justify-between text-xs">
-                                <span className="text-slate-800">{item.name}</span>
-                                <span className="text-slate-500">{item.carbs}g carbs</span>
-                            </div>
-                            ))}
-                            <div className="border-t border-slate-300 pt-1 mt-1 flex justify-between font-bold text-sm">
-                                <span className="text-slate-800">Total</span>
-                                <span className="text-green-600">{analysisResult.totalNutrition.carbs}g carbs</span>
-                            </div>
-                        </div>
-                    </div>
+                    <NutritionDisplay
+                        items={analysisResult.items}
+                        total={analysisResult.total}
+                    />
                     <div className="grid grid-cols-2 gap-3">
-                        <button type="button" onClick={resetMealState} className="w-full bg-slate-200 text-slate-700 font-semibold py-2 rounded-md hover:bg-slate-300 transition-colors">Start Over</button>
-                        <button type="submit" className="w-full bg-green-600 text-white font-semibold py-2 rounded-md hover:bg-green-700 transition-colors">Confirm & Save</button>
+                        <button type="button" onClick={resetMealState} className="w-full bg-white dark:bg-slate-700 border-2 border-primary/20 dark:border-slate-600 text-text-primary dark:text-slate-100 font-semibold py-3 rounded-button hover:bg-primary/5 dark:hover:bg-slate-600 hover:border-primary dark:hover:border-primary-light transition-all duration-300 shadow-card">Start Over</button>
+                        <button type="submit" className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300">Confirm & Save</button>
                     </div>
                 </div>
             )}
@@ -1015,26 +1057,26 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
         const renderVoiceContent = () => (
             <div>
                 {medVoiceStep === 'say_medication' && (
-                    <div className="text-center">
-                        <p className="text-slate-600 mb-4">{isListening && listeningForRef.current === 'medication' ? 'Tap icon to stop.' : 'Tap icon and say medication and quantity.'}</p>
-                        <button type="button" onClick={handleMedToggleListen} disabled={isLoading} className={`mx-auto w-20 h-20 rounded-full flex items-center justify-center transition-colors ${isListening && listeningForRef.current === 'medication' ? 'bg-red-500 text-white' : 'bg-purple-600 text-white hover:bg-purple-700'} disabled:bg-slate-400`}>{isLoading ? <Spinner /> : (isListening && listeningForRef.current === 'medication' ? <SquareIcon className="w-7 h-7" /> : <MicIcon className="w-8 h-8" />)}</button>
-                        <p className="text-slate-700 mt-4 min-h-[24px] px-2">{listeningForRef.current === 'medication' ? currentTranscript || (isListening ? <span className="text-slate-500">Listening...</span> : <span className="text-slate-400">e.g., "1 pill of Metformin"</span>) : ''}</p>
+                    <div className="text-center py-4">
+                        <p className="text-text-secondary mb-4 font-medium">{isListening && listeningForRef.current === 'medication' ? 'Tap icon to stop.' : 'Tap icon and say medication and quantity.'}</p>
+                        <button type="button" onClick={handleMedToggleListen} disabled={isLoading} className={`mx-auto w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 ${isListening && listeningForRef.current === 'medication' ? 'bg-accent-pink text-white shadow-lg' : 'bg-gradient-to-br from-primary to-primary-dark text-white hover:shadow-fab'} disabled:bg-slate-300`}>{isLoading ? <Spinner /> : (isListening && listeningForRef.current === 'medication' ? <SquareIcon className="w-7 h-7" /> : <MicIcon className="w-8 h-8" />)}</button>
+                        <p className="text-text-primary mt-4 min-h-[24px] px-2">{listeningForRef.current === 'medication' ? currentTranscript || (isListening ? <span className="text-text-secondary">Listening...</span> : <span className="text-text-light">e.g., "1 pill of Metformin"</span>) : ''}</p>
                     </div>
                 )}
                 {medVoiceStep === 'confirm' && medData.med && (
-                    <div className="p-4 bg-slate-100 rounded-lg">
+                    <div className="p-5 bg-primary/5 rounded-card border-2 border-primary/30">
                         <div className="text-center">
-                            <p className="text-slate-600">Is this correct?</p>
-                            <p className="text-xl font-bold text-slate-800 my-2">{medData.med.name}</p>
-                            <p className="text-2xl font-bold text-purple-600">{medData.quantity} <span className="text-lg font-normal">x {medData.med.dosage}{medData.med.unit}</span></p>
+                            <p className="text-text-secondary font-medium">Is this correct?</p>
+                            <p className="text-xl font-bold text-text-primary my-2">{medData.med.name}</p>
+                            <p className="text-3xl font-bold text-accent-purple">{medData.quantity} <span className="text-lg font-normal text-text-light">x {medData.med.dosage}{medData.med.unit}</span></p>
                         </div>
                         <div className="grid grid-cols-2 gap-3 mt-6">
-                            <button type="button" onClick={resetMedicationState} className="w-full bg-slate-200 text-slate-700 font-semibold py-3 rounded-md hover:bg-slate-300 transition-colors">Start Over</button>
-                            <button type="button" onClick={handleVoiceMedSubmit} className="w-full bg-green-600 text-white font-semibold py-3 rounded-md hover:bg-green-700 transition-colors">Confirm & Save</button>
+                            <button type="button" onClick={resetMedicationState} className="w-full bg-white border-2 border-primary/20 text-text-primary font-semibold py-3 rounded-button hover:bg-primary/5 hover:border-primary transition-all duration-300 shadow-card">Start Over</button>
+                            <button type="button" onClick={handleVoiceMedSubmit} className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300">Confirm & Save</button>
                         </div>
                     </div>
                 )}
-                {error && <p className="text-red-500 text-center mt-4">{error}</p>}
+                {error && <p className="text-accent-pink text-center mt-4 font-medium">{error}</p>}
             </div>
         );
 
@@ -1042,7 +1084,7 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
              <form onSubmit={handleManualMedSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <label htmlFor="med-select" className="block text-sm font-medium text-slate-700">Medication</label>
+                        <label htmlFor="med-select" className="block text-sm font-semibold text-text-primary dark:text-slate-100 mb-2">Medication</label>
                         <select
                             id="med-select"
                             value={selectedMedId}
@@ -1050,13 +1092,13 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
                                 setSelectedMedId(e.target.value);
                                 setError(''); // Clear error when user changes selection
                             }}
-                            className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-slate-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md bg-white"
+                            className="block w-full bg-white dark:bg-slate-700 text-text-primary dark:text-slate-100 rounded-button border-2 border-primary/20 dark:border-slate-600 focus:border-primary dark:focus:border-primary-light focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300 px-3 py-3"
                         >
                             {userMedications.map(med => <option key={med.id} value={med.id}>{med.name}</option>)}
                         </select>
                     </div>
                     <div>
-                        <label htmlFor="med-quantity" className="block text-sm font-medium text-slate-700">Quantity</label>
+                        <label htmlFor="med-quantity" className="block text-sm font-semibold text-text-primary dark:text-slate-100 mb-2">Quantity</label>
                         <input
                             type="number"
                             id="med-quantity"
@@ -1075,22 +1117,19 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
                             }}
                             onFocus={(e) => e.target.select()}
                             min="1"
-                            className="mt-1 block w-full bg-white text-slate-900 placeholder:text-slate-400 rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2"
+                            className="block w-full bg-white dark:bg-slate-700 text-text-primary dark:text-slate-100 placeholder:text-text-light dark:placeholder:text-slate-400 rounded-button border-2 border-primary/20 dark:border-slate-600 shadow-sm focus:border-primary dark:focus:border-primary-light focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300 p-3"
                         />
                     </div>
                 </div>
-                 {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-                <button type="submit" className="w-full bg-purple-600 text-white font-semibold py-2 rounded-md hover:bg-purple-700 transition-colors">Save Medication</button>
+                 {error && <p className="text-accent-pink text-sm text-center font-medium">{error}</p>}
+                <button type="submit" className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300">Save Medication</button>
             </form>
         );
-        
+
         return (
             <div>
-                <div className="flex justify-center items-center rounded-lg bg-slate-100 p-1 mb-4">
-                    <button type="button" onClick={() => { setMedLogMode('voice'); setError(''); }} className={`px-3 py-1.5 text-sm font-medium rounded-md flex items-center space-x-2 transition-colors ${medLogMode === 'voice' ? 'bg-white text-purple-700 shadow-sm' : 'text-slate-600 hover:bg-slate-200'}`}><MicIcon className="w-4 h-4"/><span>Voice</span></button>
-                    <button type="button" onClick={() => { setMedLogMode('manual'); setError(''); }} className={`px-3 py-1.5 text-sm font-medium rounded-md flex items-center space-x-2 transition-colors ${medLogMode === 'manual' ? 'bg-white text-purple-700 shadow-sm' : 'text-slate-600 hover:bg-slate-200'}`}><PencilIcon className="w-4 h-4"/><span>Manual</span></button>
-                </div>
-                {userMedications.length > 0 ? (medLogMode === 'voice' ? renderVoiceContent() : renderManualContent()) : <p className="text-center text-slate-500">Please add medications in settings first.</p>}
+                {/* Voice removed - medication names are too long to say accurately */}
+                {userMedications.length > 0 ? renderManualContent() : <p className="text-center text-slate-500 dark:text-slate-400 font-medium">Please add medications in settings first.</p>}
             </div>
         );
     }
@@ -1099,21 +1138,21 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
         const renderVoiceContent = () => (
             <div>
                 {weightVoiceStep === 'say_reading' && (
-                    <div className="text-center">
-                        <p className="text-slate-600 mb-4">{isListening && listeningForRef.current === 'weight' ? 'Tap icon to stop.' : 'Tap icon and say your weight.'}</p>
-                        <button type="button" onClick={handleWeightToggleListen} disabled={isLoading} className={`mx-auto w-20 h-20 rounded-full flex items-center justify-center transition-colors ${isListening && listeningForRef.current === 'weight' ? 'bg-red-500 text-white' : 'bg-teal-600 text-white hover:bg-teal-700'} disabled:bg-slate-400`}>{isLoading ? <Spinner /> : (isListening && listeningForRef.current === 'weight' ? <SquareIcon className="w-7 h-7" /> : <MicIcon className="w-8 h-8" />)}</button>
-                        <p className="text-slate-700 mt-4 min-h-[24px] px-2">{listeningForRef.current === 'weight' ? currentTranscript || (isListening ? <span className="text-slate-500">Listening...</span> : '') : ''}</p>
+                    <div className="text-center py-4">
+                        <p className="text-text-secondary dark:text-slate-400 mb-4 font-medium">{isListening && listeningForRef.current === 'weight' ? 'Tap icon to stop.' : 'Tap icon and say your weight.'}</p>
+                        <button type="button" onClick={handleWeightToggleListen} disabled={isLoading} className={`mx-auto w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 ${isListening && listeningForRef.current === 'weight' ? 'bg-accent-pink text-white shadow-lg' : 'bg-gradient-to-br from-primary to-primary-dark text-white hover:shadow-fab'} disabled:bg-slate-300`}>{isLoading ? <Spinner /> : (isListening && listeningForRef.current === 'weight' ? <SquareIcon className="w-7 h-7" /> : <MicIcon className="w-8 h-8" />)}</button>
+                        <p className="text-text-primary dark:text-slate-100 mt-4 min-h-[24px] px-2">{listeningForRef.current === 'weight' ? currentTranscript || (isListening ? <span className="text-text-secondary dark:text-slate-400">Listening...</span> : '') : ''}</p>
                     </div>
                 )}
                 {weightVoiceStep === 'confirm' && weightParsedData && (
-                    <div className="p-4 bg-slate-100 rounded-lg">
+                    <div className="p-5 bg-primary/5 dark:bg-primary/10 rounded-card border-2 border-primary/30 dark:border-primary/40">
                         <div className="text-center">
-                            <p className="text-slate-600">Is this correct?</p>
-                            <p className="text-3xl font-bold text-teal-600 my-2">{weightParsedData.value} <span className="text-lg font-normal">{weightParsedData.unit}</span></p>
+                            <p className="text-text-secondary dark:text-slate-400 font-medium">Is this correct?</p>
+                            <p className="text-4xl font-bold text-accent-orange my-2">{weightParsedData.value} <span className="text-lg font-normal text-text-light dark:text-slate-400">{weightParsedData.unit}</span></p>
                         </div>
                         <div className="grid grid-cols-2 gap-3 mt-6">
-                            <button type="button" onClick={resetWeightState} className="w-full bg-slate-200 text-slate-700 font-semibold py-3 rounded-md hover:bg-slate-300 transition-colors">Start Over</button>
-                            <button type="button" onClick={handleVoiceWeightSubmit} className="w-full bg-green-600 text-white font-semibold py-3 rounded-md hover:bg-green-700 transition-colors">Confirm & Save</button>
+                            <button type="button" onClick={resetWeightState} className="w-full bg-white dark:bg-slate-700 border-2 border-primary/20 dark:border-slate-600 text-text-primary dark:text-slate-100 font-semibold py-3 rounded-button hover:bg-primary/5 dark:hover:bg-slate-600 hover:border-primary dark:hover:border-primary-light transition-all duration-300 shadow-card">Start Over</button>
+                            <button type="button" onClick={handleVoiceWeightSubmit} className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300">Confirm & Save</button>
                         </div>
                     </div>
                 )}
@@ -1124,19 +1163,19 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
             <form onSubmit={handleManualWeightSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <label htmlFor="weight-value" className="block text-sm font-medium text-slate-700">Weight</label>
-                        <input type="number" id="weight-value" value={manualWeightValue} onChange={e => setManualWeightValue(e.target.value)} step="0.1" required className="mt-1 block w-full bg-white text-slate-900 rounded-md border-slate-300 p-2" />
+                        <label htmlFor="weight-value" className="block text-sm font-semibold text-text-primary dark:text-slate-100 mb-2">Weight</label>
+                        <input type="number" id="weight-value" value={manualWeightValue} onChange={e => setManualWeightValue(e.target.value)} step="0.1" required className="block w-full bg-white dark:bg-slate-700 text-text-primary dark:text-slate-100 rounded-button border-2 border-primary/20 dark:border-slate-600 p-3 focus:border-primary dark:focus:border-primary-light focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300" />
                     </div>
                     <div>
-                        <label htmlFor="weight-unit" className="block text-sm font-medium text-slate-700">Unit</label>
-                        <select id="weight-unit" value={manualWeightUnit} onChange={e => setManualWeightUnit(e.target.value as 'kg' | 'lbs')} className="mt-1 block w-full rounded-md border-slate-300 p-2 bg-white">
+                        <label htmlFor="weight-unit" className="block text-sm font-semibold text-text-primary dark:text-slate-100 mb-2">Unit</label>
+                        <select id="weight-unit" value={manualWeightUnit} onChange={e => setManualWeightUnit(e.target.value as 'kg' | 'lbs')} className="block w-full bg-white dark:bg-slate-700 text-text-primary dark:text-slate-100 rounded-button border-2 border-primary/20 dark:border-slate-600 p-3 focus:border-primary dark:focus:border-primary-light focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300">
                             <option value="kg">kg</option>
                             <option value="lbs">lbs</option>
                         </select>
                     </div>
                 </div>
-                {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-                <button type="submit" className="w-full bg-teal-600 text-white font-semibold py-2 rounded-md hover:bg-teal-700">Save Weight</button>
+                {error && <p className="text-accent-pink text-sm text-center font-medium">{error}</p>}
+                <button type="submit" className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300">Save Weight</button>
             </form>
         );
 
@@ -1146,27 +1185,27 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
                     <div>
                         {!weightPreviewUrl ? (
                              <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <button type="button" onClick={() => { weightFileInputRef.current?.setAttribute('capture', 'environment'); weightFileInputRef.current?.click(); }} className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center text-slate-500 hover:bg-slate-50 hover:border-teal-500 transition-colors flex flex-col items-center justify-center"><CameraIcon className="w-10 h-10 mx-auto text-slate-400 mb-2" /><span>Take Picture</span></button>
-                                <button type="button" onClick={() => { weightFileInputRef.current?.removeAttribute('capture'); weightFileInputRef.current?.click(); }} className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center text-slate-500 hover:bg-slate-50 hover:border-teal-500 transition-colors flex flex-col items-center justify-center"><UploadIcon className="w-10 h-10 mx-auto text-slate-400 mb-2" /><span>Upload Photo</span></button>
+                                <button type="button" onClick={() => { weightFileInputRef.current?.setAttribute('capture', 'environment'); weightFileInputRef.current?.click(); }} className="border-2 border-dashed border-primary/30 dark:border-primary/40 rounded-card p-8 text-center text-text-secondary dark:text-slate-400 hover:bg-primary/5 dark:hover:bg-primary/10 hover:border-primary dark:hover:border-primary-light transition-all duration-300 flex flex-col items-center justify-center"><CameraIcon className="w-10 h-10 mx-auto text-primary dark:text-primary-light mb-2" /><span>Take Picture</span></button>
+                                <button type="button" onClick={() => { weightFileInputRef.current?.removeAttribute('capture'); weightFileInputRef.current?.click(); }} className="border-2 border-dashed border-primary/30 dark:border-primary/40 rounded-card p-8 text-center text-text-secondary dark:text-slate-400 hover:bg-primary/5 dark:hover:bg-primary/10 hover:border-primary dark:hover:border-primary-light transition-all duration-300 flex flex-col items-center justify-center"><UploadIcon className="w-10 h-10 mx-auto text-primary dark:text-primary-light mb-2" /><span>Upload Photo</span></button>
                                 <input type="file" accept="image/*" ref={weightFileInputRef} onChange={handleWeightFileChange} className="hidden" />
                             </div>
                         ) : (
                             <div className="space-y-4">
-                                <img src={weightPreviewUrl} alt="Weight scale preview" className="rounded-lg w-full max-h-48 object-contain" />
-                                <button type="button" onClick={handleWeightPhotoAnalyze} disabled={isLoading} className="w-full bg-blue-600 text-white font-semibold py-3 rounded-md hover:bg-blue-700 disabled:bg-slate-300 flex items-center justify-center">{isLoading ? <Spinner /> : 'Analyze Weight'}</button>
+                                <img src={weightPreviewUrl} alt="Weight scale preview" className="rounded-card w-full max-h-48 object-contain shadow-card" />
+                                <button type="button" onClick={handleWeightPhotoAnalyze} disabled={isLoading} className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300 disabled:from-slate-300 disabled:to-slate-300 flex items-center justify-center">{isLoading ? <Spinner /> : 'Analyze Weight'}</button>
                             </div>
                         )}
                     </div>
                 )}
                 {weightPhotoStep === 'confirm' && weightParsedData && (
-                     <div className="p-4 bg-slate-100 rounded-lg">
+                     <div className="p-5 bg-primary/5 dark:bg-primary/10 rounded-card border-2 border-primary/30 dark:border-primary/40">
                         <div className="text-center">
-                            <p className="text-slate-600">Is this correct?</p>
-                            <p className="text-3xl font-bold text-teal-600 my-2">{weightParsedData.value} <span className="text-lg font-normal">{weightParsedData.unit}</span></p>
+                            <p className="text-text-secondary dark:text-slate-400 font-medium">Is this correct?</p>
+                            <p className="text-4xl font-bold text-accent-orange my-2">{weightParsedData.value} <span className="text-lg font-normal text-text-light dark:text-slate-400">{weightParsedData.unit}</span></p>
                         </div>
                         <div className="grid grid-cols-2 gap-3 mt-6">
-                            <button type="button" onClick={resetWeightState} className="w-full bg-slate-200 text-slate-700 font-semibold py-3 rounded-md hover:bg-slate-300 transition-colors">Start Over</button>
-                            <button type="button" onClick={handlePhotoWeightSubmit} className="w-full bg-green-600 text-white font-semibold py-3 rounded-md hover:bg-green-700 transition-colors">Confirm & Save</button>
+                            <button type="button" onClick={resetWeightState} className="w-full bg-white dark:bg-slate-700 border-2 border-primary/20 dark:border-slate-600 text-text-primary dark:text-slate-100 font-semibold py-3 rounded-button hover:bg-primary/5 dark:hover:bg-slate-600 hover:border-primary dark:hover:border-primary-light transition-all duration-300 shadow-card">Start Over</button>
+                            <button type="button" onClick={handlePhotoWeightSubmit} className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300">Confirm & Save</button>
                         </div>
                     </div>
                 )}
@@ -1175,12 +1214,12 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
 
         return (
             <div>
-                <div className="flex justify-center items-center rounded-lg bg-slate-100 p-1 mb-4">
-                    <button type="button" onClick={() => { setWeightLogMode('voice'); setError(''); }} className={`px-3 py-1.5 text-sm font-medium rounded-md flex items-center space-x-2 transition-colors ${weightLogMode === 'voice' ? 'bg-white text-teal-700 shadow-sm' : 'text-slate-600 hover:bg-slate-200'}`}><MicIcon className="w-4 h-4"/><span>Voice</span></button>
-                    <button type="button" onClick={() => { setWeightLogMode('manual'); setError(''); }} className={`px-3 py-1.5 text-sm font-medium rounded-md flex items-center space-x-2 transition-colors ${weightLogMode === 'manual' ? 'bg-white text-teal-700 shadow-sm' : 'text-slate-600 hover:bg-slate-200'}`}><PencilIcon className="w-4 h-4"/><span>Manual</span></button>
-                    <button type="button" onClick={() => { setWeightLogMode('photo'); setError(''); }} className={`px-3 py-1.5 text-sm font-medium rounded-md flex items-center space-x-2 transition-colors ${weightLogMode === 'photo' ? 'bg-white text-teal-700 shadow-sm' : 'text-slate-600 hover:bg-slate-200'}`}><CameraIcon className="w-4 h-4"/><span>Photo</span></button>
+                <div className="flex justify-center items-center rounded-card bg-primary/5 dark:bg-slate-700 p-1 mb-4 border-2 border-primary/20 dark:border-slate-600">
+                    <button type="button" onClick={() => { setWeightLogMode('voice'); setError(''); }} className={`px-3 py-1.5 text-sm font-semibold rounded-button flex items-center space-x-2 transition-all duration-300 ${weightLogMode === 'voice' ? 'bg-white dark:bg-slate-600 text-primary dark:text-primary-light shadow-card' : 'text-text-light dark:text-slate-400 hover:bg-white dark:hover:bg-slate-600 hover:bg-opacity-50'}`}><MicIcon className="w-4 h-4"/><span>Voice</span></button>
+                    <button type="button" onClick={() => { setWeightLogMode('manual'); setError(''); }} className={`px-3 py-1.5 text-sm font-semibold rounded-button flex items-center space-x-2 transition-all duration-300 ${weightLogMode === 'manual' ? 'bg-white dark:bg-slate-600 text-primary dark:text-primary-light shadow-card' : 'text-text-light dark:text-slate-400 hover:bg-white dark:hover:bg-slate-600 hover:bg-opacity-50'}`}><PencilIcon className="w-4 h-4"/><span>Manual</span></button>
+                    <button type="button" onClick={() => { setWeightLogMode('photo'); setError(''); }} className={`px-3 py-1.5 text-sm font-semibold rounded-button flex items-center space-x-2 transition-all duration-300 ${weightLogMode === 'photo' ? 'bg-white dark:bg-slate-600 text-primary dark:text-primary-light shadow-card' : 'text-text-light dark:text-slate-400 hover:bg-white dark:hover:bg-slate-600 hover:bg-opacity-50'}`}><CameraIcon className="w-4 h-4"/><span>Photo</span></button>
                 </div>
-                {error && !isLoading && <p className="text-red-500 text-center mt-4 text-sm mb-2">{error}</p>}
+                {error && !isLoading && <p className="text-accent-pink text-center mt-4 text-sm mb-2 font-medium">{error}</p>}
                 {weightLogMode === 'voice' && renderVoiceContent()}
                 {weightLogMode === 'manual' && renderManualContent()}
                 {weightLogMode === 'photo' && renderPhotoContent()}
@@ -1192,46 +1231,46 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
          const renderVoiceContent = () => (
             <div>
                 {bpVoiceStep === 'say_reading' && (
-                    <div className="text-center">
-                        <p className="text-slate-600 mb-4">{isListening && listeningForRef.current === 'blood_pressure' ? 'Tap icon to stop.' : 'Tap icon and say your reading.'}</p>
-                        <button type="button" onClick={handleBpToggleListen} disabled={isLoading} className={`mx-auto w-20 h-20 rounded-full flex items-center justify-center transition-colors ${isListening && listeningForRef.current === 'blood_pressure' ? 'bg-red-500 text-white' : 'bg-indigo-600 text-white hover:bg-indigo-700'} disabled:bg-slate-400`}>{isLoading ? <Spinner /> : (isListening && listeningForRef.current === 'blood_pressure' ? <SquareIcon className="w-7 h-7" /> : <MicIcon className="w-8 h-8" />)}</button>
-                        <p className="text-slate-700 mt-4 min-h-[24px] px-2">{listeningForRef.current === 'blood_pressure' ? currentTranscript || (isListening ? <span className="text-slate-500">Listening...</span> : '') : ''}</p>
+                    <div className="text-center py-4">
+                        <p className="text-text-secondary mb-4 font-medium">{isListening && listeningForRef.current === 'blood_pressure' ? 'Tap icon to stop.' : 'Tap icon and say your reading.'}</p>
+                        <button type="button" onClick={handleBpToggleListen} disabled={isLoading} className={`mx-auto w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 ${isListening && listeningForRef.current === 'blood_pressure' ? 'bg-accent-pink text-white shadow-lg' : 'bg-gradient-to-br from-primary to-primary-dark text-white hover:shadow-fab'} disabled:bg-slate-300`}>{isLoading ? <Spinner /> : (isListening && listeningForRef.current === 'blood_pressure' ? <SquareIcon className="w-7 h-7" /> : <MicIcon className="w-8 h-8" />)}</button>
+                        <p className="text-text-primary mt-4 min-h-[24px] px-2">{listeningForRef.current === 'blood_pressure' ? currentTranscript || (isListening ? <span className="text-text-secondary">Listening...</span> : '') : ''}</p>
                     </div>
                 )}
                 {bpVoiceStep === 'confirm' && bpParsedData && (
-                    <div className="p-4 bg-slate-100 rounded-lg">
+                    <div className="p-5 bg-primary/5 rounded-card border-2 border-primary/30">
                         <div className="text-center">
-                            <p className="text-slate-600">Is this correct?</p>
-                            <p className="text-3xl font-bold text-indigo-600 my-2">{bpParsedData.systolic} / {bpParsedData.diastolic} <span className="text-lg font-normal">mmHg</span></p>
-                            <p className="text-slate-500">Pulse: {bpParsedData.pulse} bpm</p>
+                            <p className="text-text-secondary font-medium">Is this correct?</p>
+                            <p className="text-4xl font-bold text-accent-pink my-2">{bpParsedData.systolic} / {bpParsedData.diastolic} <span className="text-lg font-normal text-text-light">mmHg</span></p>
+                            <p className="text-text-secondary font-medium">Pulse: {bpParsedData.pulse} bpm</p>
                         </div>
                         <div className="grid grid-cols-2 gap-3 mt-6">
-                            <button type="button" onClick={resetBpState} className="w-full bg-slate-200 text-slate-700 font-semibold py-3 rounded-md hover:bg-slate-300 transition-colors">Start Over</button>
-                            <button type="button" onClick={handleVoiceBpSubmit} className="w-full bg-green-600 text-white font-semibold py-3 rounded-md hover:bg-green-700 transition-colors">Confirm & Save</button>
+                            <button type="button" onClick={resetBpState} className="w-full bg-white border-2 border-primary/20 text-text-primary font-semibold py-3 rounded-button hover:bg-primary/5 hover:border-primary transition-all duration-300 shadow-card">Start Over</button>
+                            <button type="button" onClick={handleVoiceBpSubmit} className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300">Confirm & Save</button>
                         </div>
                     </div>
                 )}
             </div>
         );
-        
+
         const renderManualContent = () => (
              <form onSubmit={handleManualBpSubmit} className="space-y-4">
                 <div className="grid grid-cols-3 gap-3">
                     <div>
-                        <label htmlFor="bp-sys" className="block text-sm font-medium text-slate-700">Systolic</label>
-                        <input type="number" id="bp-sys" value={manualSystolic} onChange={e => setManualSystolic(e.target.value)} required className="mt-1 block w-full p-2 bg-white border-slate-300 rounded-md" />
+                        <label htmlFor="bp-sys" className="block text-sm font-semibold text-text-primary dark:text-slate-100 mb-2">Systolic</label>
+                        <input type="number" id="bp-sys" value={manualSystolic} onChange={e => setManualSystolic(e.target.value)} required className="block w-full p-3 bg-white dark:bg-slate-700 text-text-primary dark:text-slate-100 border-2 border-primary/20 dark:border-slate-600 rounded-button focus:border-primary dark:focus:border-primary-light focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300" />
                     </div>
                     <div>
-                        <label htmlFor="bp-dia" className="block text-sm font-medium text-slate-700">Diastolic</label>
-                        <input type="number" id="bp-dia" value={manualDiastolic} onChange={e => setManualDiastolic(e.target.value)} required className="mt-1 block w-full p-2 bg-white border-slate-300 rounded-md" />
+                        <label htmlFor="bp-dia" className="block text-sm font-semibold text-text-primary dark:text-slate-100 mb-2">Diastolic</label>
+                        <input type="number" id="bp-dia" value={manualDiastolic} onChange={e => setManualDiastolic(e.target.value)} required className="block w-full p-3 bg-white dark:bg-slate-700 text-text-primary dark:text-slate-100 border-2 border-primary/20 dark:border-slate-600 rounded-button focus:border-primary dark:focus:border-primary-light focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300" />
                     </div>
                     <div>
-                        <label htmlFor="bp-pulse" className="block text-sm font-medium text-slate-700">Pulse</label>
-                        <input type="number" id="bp-pulse" value={manualPulse} onChange={e => setManualPulse(e.target.value)} required className="mt-1 block w-full p-2 bg-white border-slate-300 rounded-md" />
+                        <label htmlFor="bp-pulse" className="block text-sm font-semibold text-text-primary dark:text-slate-100 mb-2">Pulse</label>
+                        <input type="number" id="bp-pulse" value={manualPulse} onChange={e => setManualPulse(e.target.value)} required className="block w-full p-3 bg-white dark:bg-slate-700 text-text-primary dark:text-slate-100 border-2 border-primary/20 dark:border-slate-600 rounded-button focus:border-primary dark:focus:border-primary-light focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300" />
                     </div>
                 </div>
-                 {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-                <button type="submit" className="w-full bg-indigo-600 text-white font-semibold py-2 rounded-md hover:bg-indigo-700">Save Blood Pressure</button>
+                 {error && <p className="text-accent-pink text-sm text-center font-medium">{error}</p>}
+                <button type="submit" className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300">Save Blood Pressure</button>
             </form>
         );
 
@@ -1241,28 +1280,28 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
                     <div>
                         {!bpPreviewUrl ? (
                              <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <button type="button" onClick={() => { bpFileInputRef.current?.setAttribute('capture', 'environment'); bpFileInputRef.current?.click(); }} className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center text-slate-500 hover:bg-slate-50 hover:border-indigo-500 transition-colors flex flex-col items-center justify-center"><CameraIcon className="w-10 h-10 mx-auto text-slate-400 mb-2" /><span>Take Picture</span></button>
-                                <button type="button" onClick={() => { bpFileInputRef.current?.removeAttribute('capture'); bpFileInputRef.current?.click(); }} className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center text-slate-500 hover:bg-slate-50 hover:border-indigo-500 transition-colors flex flex-col items-center justify-center"><UploadIcon className="w-10 h-10 mx-auto text-slate-400 mb-2" /><span>Upload Photo</span></button>
+                                <button type="button" onClick={() => { bpFileInputRef.current?.setAttribute('capture', 'environment'); bpFileInputRef.current?.click(); }} className="border-2 border-dashed border-primary/30 dark:border-primary/40 rounded-card p-8 text-center text-text-secondary dark:text-slate-400 hover:bg-primary/5 dark:hover:bg-primary/10 hover:border-primary dark:hover:border-primary-light transition-all duration-300 flex flex-col items-center justify-center"><CameraIcon className="w-10 h-10 mx-auto text-primary dark:text-primary-light mb-2" /><span>Take Picture</span></button>
+                                <button type="button" onClick={() => { bpFileInputRef.current?.removeAttribute('capture'); bpFileInputRef.current?.click(); }} className="border-2 border-dashed border-primary/30 dark:border-primary/40 rounded-card p-8 text-center text-text-secondary dark:text-slate-400 hover:bg-primary/5 dark:hover:bg-primary/10 hover:border-primary dark:hover:border-primary-light transition-all duration-300 flex flex-col items-center justify-center"><UploadIcon className="w-10 h-10 mx-auto text-primary dark:text-primary-light mb-2" /><span>Upload Photo</span></button>
                                 <input type="file" accept="image/*" ref={bpFileInputRef} onChange={handleBpFileChange} className="hidden" />
                             </div>
                         ) : (
                             <div className="space-y-4">
-                                <img src={bpPreviewUrl} alt="Blood pressure monitor preview" className="rounded-lg w-full max-h-48 object-contain" />
-                                <button type="button" onClick={handleBpPhotoAnalyze} disabled={isLoading} className="w-full bg-blue-600 text-white font-semibold py-3 rounded-md hover:bg-blue-700 disabled:bg-slate-300 flex items-center justify-center">{isLoading ? <Spinner /> : 'Analyze Reading'}</button>
+                                <img src={bpPreviewUrl} alt="Blood pressure monitor preview" className="rounded-card w-full max-h-48 object-contain shadow-card" />
+                                <button type="button" onClick={handleBpPhotoAnalyze} disabled={isLoading} className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300 disabled:from-slate-300 disabled:to-slate-300 flex items-center justify-center">{isLoading ? <Spinner /> : 'Analyze Reading'}</button>
                             </div>
                         )}
                     </div>
                 )}
                 {bpPhotoStep === 'confirm' && bpParsedData && (
-                     <div className="p-4 bg-slate-100 rounded-lg">
+                     <div className="p-5 bg-primary/5 dark:bg-primary/10 rounded-card border-2 border-primary/30 dark:border-primary/40">
                         <div className="text-center">
-                            <p className="text-slate-600">Is this correct?</p>
-                            <p className="text-3xl font-bold text-indigo-600 my-2">{bpParsedData.systolic} / {bpParsedData.diastolic} <span className="text-lg font-normal">mmHg</span></p>
-                            <p className="text-slate-500">Pulse: {bpParsedData.pulse} bpm</p>
+                            <p className="text-text-secondary dark:text-slate-400 font-medium">Is this correct?</p>
+                            <p className="text-4xl font-bold text-accent-pink my-2">{bpParsedData.systolic} / {bpParsedData.diastolic} <span className="text-lg font-normal text-text-light dark:text-slate-400">mmHg</span></p>
+                            <p className="text-text-secondary dark:text-slate-400 font-medium">Pulse: {bpParsedData.pulse} bpm</p>
                         </div>
                         <div className="grid grid-cols-2 gap-3 mt-6">
-                            <button type="button" onClick={resetBpState} className="w-full bg-slate-200 text-slate-700 font-semibold py-3 rounded-md hover:bg-slate-300 transition-colors">Start Over</button>
-                            <button type="button" onClick={handlePhotoBpSubmit} className="w-full bg-green-600 text-white font-semibold py-3 rounded-md hover:bg-green-700 transition-colors">Confirm & Save</button>
+                            <button type="button" onClick={resetBpState} className="w-full bg-white dark:bg-slate-700 border-2 border-primary/20 dark:border-slate-600 text-text-primary dark:text-slate-100 font-semibold py-3 rounded-button hover:bg-primary/5 dark:hover:bg-slate-600 hover:border-primary dark:hover:border-primary-light transition-all duration-300 shadow-card">Start Over</button>
+                            <button type="button" onClick={handlePhotoBpSubmit} className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300">Confirm & Save</button>
                         </div>
                     </div>
                 )}
@@ -1271,13 +1310,12 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
 
         return (
             <div>
-                 <div className="flex justify-center items-center rounded-lg bg-slate-100 p-1 mb-4">
-                    <button type="button" onClick={() => { setBpLogMode('voice'); setError(''); }} className={`px-3 py-1.5 text-sm font-medium rounded-md flex items-center space-x-2 transition-colors ${bpLogMode === 'voice' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:bg-slate-200'}`}><MicIcon className="w-4 h-4"/><span>Voice</span></button>
-                    <button type="button" onClick={() => { setBpLogMode('manual'); setError(''); }} className={`px-3 py-1.5 text-sm font-medium rounded-md flex items-center space-x-2 transition-colors ${bpLogMode === 'manual' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:bg-slate-200'}`}><PencilIcon className="w-4 h-4"/><span>Manual</span></button>
-                    <button type="button" onClick={() => { setBpLogMode('photo'); setError(''); }} className={`px-3 py-1.5 text-sm font-medium rounded-md flex items-center space-x-2 transition-colors ${bpLogMode === 'photo' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600 hover:bg-slate-200'}`}><CameraIcon className="w-4 h-4"/><span>Photo</span></button>
+                 {/* Voice removed - saying three separate numbers is cumbersome */}
+                 <div className="flex justify-center items-center rounded-card bg-primary/5 dark:bg-slate-700 p-1 mb-4 border-2 border-primary/20 dark:border-slate-600">
+                    <button type="button" onClick={() => { setBpLogMode('manual'); setError(''); }} className={`px-3 py-1.5 text-sm font-semibold rounded-button flex items-center space-x-2 transition-all duration-300 ${bpLogMode === 'manual' ? 'bg-white dark:bg-slate-600 text-primary dark:text-primary-light shadow-card' : 'text-text-light dark:text-slate-400 hover:bg-white dark:hover:bg-slate-600 hover:bg-opacity-50'}`}><PencilIcon className="w-4 h-4"/><span>Manual</span></button>
+                    <button type="button" onClick={() => { setBpLogMode('photo'); setError(''); }} className={`px-3 py-1.5 text-sm font-semibold rounded-button flex items-center space-x-2 transition-all duration-300 ${bpLogMode === 'photo' ? 'bg-white dark:bg-slate-600 text-primary dark:text-primary-light shadow-card' : 'text-text-light dark:text-slate-400 hover:bg-white dark:hover:bg-slate-600 hover:bg-opacity-50'}`}><CameraIcon className="w-4 h-4"/><span>Photo</span></button>
                 </div>
-                {error && !isLoading && <p className="text-red-500 text-center mt-4 text-sm mb-2">{error}</p>}
-                {bpLogMode === 'voice' && renderVoiceContent()}
+                {error && !isLoading && <p className="text-accent-pink text-center mt-4 text-sm mb-2 font-medium">{error}</p>}
                 {bpLogMode === 'manual' && renderManualContent()}
                 {bpLogMode === 'photo' && renderPhotoContent()}
             </div>
@@ -1285,22 +1323,22 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
     };
 
     const logTypesConfig: { type: LogType; icon: React.FC<React.SVGProps<SVGSVGElement>>; label: string; colorClass: string; }[] = [
-        { type: 'glucose', icon: DropletIcon, label: 'Glucose', colorClass: 'text-blue-600' },
-        { type: 'weight', icon: WeightScaleIcon, label: 'Weight', colorClass: 'text-teal-600' },
-        { type: 'blood_pressure', icon: BloodPressureIcon, label: 'BP', colorClass: 'text-indigo-600' },
-        { type: 'meal', icon: ForkSpoonIcon, label: 'Meal', colorClass: 'text-green-600' },
-        { type: 'medication', icon: PillIcon, label: 'Meds', colorClass: 'text-purple-600' },
+        { type: 'glucose', icon: DropletIcon, label: 'Glucose', colorClass: 'text-accent-blue' },
+        { type: 'weight', icon: WeightScaleIcon, label: 'Weight', colorClass: 'text-accent-orange' },
+        { type: 'blood_pressure', icon: BloodPressureIcon, label: 'BP', colorClass: 'text-accent-pink' },
+        { type: 'meal', icon: ForkSpoonIcon, label: 'Meal', colorClass: 'text-primary' },
+        { type: 'medication', icon: PillIcon, label: 'Meds', colorClass: 'text-accent-purple' },
     ];
 
 
     return (
-        <section className="bg-white p-4 sm:p-6 rounded-xl shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-700 mb-4">Add a Past Entry</h2>
-            
+        <section className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-card shadow-card border border-transparent dark:border-slate-700">
+            <h2 className="text-xl font-semibold text-text-primary dark:text-slate-100 mb-4">Add a Past Entry</h2>
+
             {!isDateTimeConfirmed ? (
                 <>
                     <div className="mb-4">
-                        <label htmlFor="late-entry-datetime" className="block text-sm font-medium text-slate-700 mb-1">Step 1: Select Date and Time</label>
+                        <label htmlFor="late-entry-datetime" className="block text-sm font-semibold text-text-primary dark:text-slate-100 mb-2">Step 1: Select Date and Time</label>
                         <input
                             type="datetime-local"
                             id="late-entry-datetime"
@@ -1309,53 +1347,55 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
                                 const newDate = new Date(e.target.value);
                                 if (!isNaN(newDate.getTime())) setTimestamp(newDate);
                             }}
-                            className="w-full bg-white text-slate-900 placeholder:text-slate-400 rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2"
+                            className="w-full bg-white dark:bg-slate-700 text-text-primary dark:text-slate-100 placeholder:text-text-light dark:placeholder:text-slate-400 rounded-button border-2 border-primary/20 dark:border-slate-600 shadow-sm focus:border-primary dark:focus:border-primary-light focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300 p-3"
                         />
                     </div>
                     <button
+                        type="button"
                         onClick={() => setIsDateTimeConfirmed(true)}
-                        className="w-full bg-blue-600 text-white font-semibold py-3 rounded-md hover:bg-blue-700 transition-colors mt-4"
+                        className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300 mt-4"
                     >
                         Confirm Date & Time
                     </button>
                 </>
             ) : (
                 <>
-                    <div className="flex justify-between items-center mb-4 bg-slate-50 p-3 rounded-lg">
+                    <div className="flex justify-between items-center mb-4 bg-primary/5 dark:bg-primary/10 p-4 rounded-card border-2 border-primary/30 dark:border-primary/40">
                         <div>
-                            <p className="text-sm font-medium text-slate-700">Logging for:</p>
-                            <p className="font-semibold text-blue-600">
+                            <p className="text-sm font-medium text-text-secondary dark:text-slate-400">Logging for:</p>
+                            <p className="font-semibold text-primary dark:text-primary-light">
                                 {timestamp.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}, {timestamp.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
                             </p>
                         </div>
-                        <button 
+                        <button
+                            type="button"
                             onClick={() => setIsDateTimeConfirmed(false)}
-                            className="px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-100 transition-colors"
+                            className="px-3 py-1.5 text-sm font-medium text-text-primary dark:text-slate-100 bg-white dark:bg-slate-700 border-2 border-primary/20 dark:border-slate-600 rounded-button hover:bg-primary/5 dark:hover:bg-slate-600 hover:border-primary dark:hover:border-primary-light transition-all duration-300 shadow-card"
                         >
                             Change
                         </button>
                     </div>
 
-                    <p className="block text-sm font-medium text-slate-700 mb-2">Step 2: Choose and add your entry</p>
-                    
+                    <p className="block text-sm font-semibold text-text-primary dark:text-slate-100 mb-2">Step 2: Choose and add your entry</p>
+
                     {/* Segmented Control */}
-                    <div className="grid grid-cols-5 gap-1 rounded-lg bg-slate-100 p-1 mb-4">
+                    <div className="grid grid-cols-5 gap-1 rounded-card bg-primary/5 dark:bg-slate-700 p-1 mb-4 border-2 border-primary/20 dark:border-slate-600">
                         {logTypesConfig.map(({ type, icon: Icon, label, colorClass }) => (
                             <button
                                 key={type}
                                 type="button"
                                 onClick={() => setActiveLogType(type)}
-                                className={`w-full flex flex-col items-center justify-center py-2 rounded-md text-center transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+                                className={`w-full flex flex-col items-center justify-center py-2 rounded-button text-center transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary ${
                                     activeLogType === type
-                                        ? 'bg-white shadow-sm'
-                                        : 'bg-transparent hover:bg-slate-200'
+                                        ? 'bg-white dark:bg-slate-600 shadow-card'
+                                        : 'bg-transparent hover:bg-white dark:hover:bg-slate-600 hover:bg-opacity-50'
                                 }`}
                             >
                                 <Icon className={`w-6 h-6 mb-1 transition-colors ${
-                                    activeLogType === type ? colorClass : 'text-slate-500'
+                                    activeLogType === type ? colorClass : 'text-text-light dark:text-slate-400'
                                 }`} />
                                 <span className={`text-xs font-semibold transition-colors ${
-                                    activeLogType === type ? 'text-slate-800' : 'text-slate-600'
+                                    activeLogType === type ? 'text-text-primary dark:text-slate-100' : 'text-text-secondary dark:text-slate-400'
                                 }`}>
                                     {label}
                                 </span>
@@ -1374,7 +1414,7 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
 
 
                     {showSuccess && (
-                        <div className="mt-4 p-3 bg-green-100 text-green-700 font-semibold rounded-lg text-center animate-fade-in-up">
+                        <div className="mt-4 p-4 bg-primary/5 dark:bg-primary/10 border-2 border-primary dark:border-primary-light text-primary dark:text-primary-light font-semibold rounded-card text-center animate-fade-in-up">
                             {showSuccess}
                         </div>
                     )}

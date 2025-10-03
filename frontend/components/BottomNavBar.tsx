@@ -17,10 +17,14 @@ const NavButton: React.FC<{
     return (
         <button
             onClick={onClick}
-            className={`flex flex-col items-center justify-center w-full pt-2 pb-1 transition-colors duration-200 ${isActive ? 'text-blue-600' : 'text-slate-500 hover:text-blue-600'}`}
+            className={`flex flex-col items-center justify-center w-full pt-3 pb-2 transition-all duration-300 ${
+                isActive
+                    ? 'text-primary dark:text-primary-light'
+                    : 'text-text-secondary dark:text-slate-400 hover:text-primary dark:hover:text-primary-light'
+            }`}
         >
             {icon}
-            <span className="text-xs mt-1">{label}</span>
+            <span className="text-xs mt-1 font-medium">{label}</span>
         </button>
     );
 };
@@ -28,7 +32,7 @@ const NavButton: React.FC<{
 
 const BottomNavBar: React.FC<BottomNavBarProps> = ({ activePage, onNavigate }) => {
     return (
-        <nav className="flex-shrink-0 bg-white shadow-[0_-1px_3px_rgba(0,0,0,0.1)]">
+        <nav className="flex-shrink-0 bg-white dark:bg-slate-800 border-t border-border-light dark:border-slate-700">
             <div className="container mx-auto flex justify-around">
                 <NavButton
                     page="dashboard"

@@ -2,20 +2,138 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PharrroHealth: AI Diabetes Assistant</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Type2Lifestyles: AI Diabetes Management</title>
+
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="Track your glucose, weight, blood pressure, meals, and medications with AI-powered voice and photo analysis" />
+    <meta name="theme-color" content="#5D9C59" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Type2Lifestyles" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Favicon & App Icons -->
+    <link rel="icon" type="image/png" href="/type2lifestyles-logo.png" />
+    <link rel="apple-touch-icon" href="/type2lifestyles-logo.png" />
+
+    <!-- Prevent zoom on input focus (iOS) -->
+    <meta name="format-detection" content="telephone=no" />
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class', // Enable dark mode with class strategy
+        theme: {
+          extend: {
+            colors: {
+              // Type2Lifestyles Brand Colors (Official Brand Guidelines)
+              // Primary Green - for key actions, highlights, and chart lines
+              'primary': '#5D9C59',
+              'primary-light': '#7DB879',
+              'primary-dark': '#4A7C47',
+
+              // Accent Blue - for informational highlights like stat values
+              'accent-blue': '#66BBCC',
+              'accent-blue-light': '#8FCCDB',
+              'accent-blue-dark': '#4D9BAA',
+
+              // Text Colors (Brand Guidelines)
+              'text-primary': '#1E293B',      // Dark Charcoal
+              'text-secondary': '#64748B',    // Medium Grey
+              'text-light': '#94A3B8',        // Light Grey
+
+              // Background Colors (Brand Guidelines)
+              'bg-white': '#FFFFFF',          // White
+              'bg-light': '#F8FAFC',          // Very Light Grey
+              'bg-cream': '#F8FAFC',          // Very Light Grey (alias)
+
+              // Border/Divider Color (Brand Guidelines)
+              'border-light': '#E2E8F0',      // Light Grey
+
+              // Legacy colors for backward compatibility (will be phased out)
+              'bg-dark-teal': '#F8FAFC',      // Mapped to light background
+              'bg-dark-teal-light': '#FFFFFF',
+              'bg-dark-teal-lighter': '#FFFFFF',
+              'sage-green': '#5D9C59',        // Mapped to primary
+              'sage-green-dark': '#4A7C47',
+              'sky-blue': '#66BBCC',          // Mapped to accent-blue
+
+              // Accent colors for different metrics
+              'accent-orange': '#FFB84D',
+              'accent-pink': '#FF9B9B',
+              'accent-green': '#5D9C59',      // Mapped to primary
+              'accent-purple': '#9F7AEA',
+            },
+            borderRadius: {
+              'card': '16px',
+              'modal': '24px',
+              'button': '12px',
+            },
+            boxShadow: {
+              'card': '0 1px 3px rgba(0, 0, 0, 0.1)',
+              'card-hover': '0 4px 12px rgba(0, 0, 0, 0.15)',
+              'modal': '0 -4px 24px rgba(0, 0, 0, 0.15)',
+              'fab': '0 4px 12px rgba(93, 156, 89, 0.3)',
+              'fab-hover': '0 8px 20px rgba(93, 156, 89, 0.4)',
+            },
+            fontFamily: {
+              'sans': ['Poppins', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+            },
+          },
+        },
+      }
+    </script>
     <style>
+      /* Import Poppins font (Type2Lifestyles Brand Font) */
+      @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
       /* Styles to make the app feel more native */
       html, body, #root {
         height: 100%;
         overflow: hidden;
+        font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      }
+
+      /* Smooth transitions for all interactive elements */
+      button, a, input, select {
+        transition: all 0.3s ease;
+      }
+
+      /* Dark mode transition */
+      body {
+        transition: background-color 0.3s ease, color 0.3s ease;
+      }
+
+      /* Smooth color transitions for dark mode */
+      * {
+        transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+      }
+
+      /* Hide scrollbars globally */
+      * {
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* IE and Edge */
+      }
+
+      *::-webkit-scrollbar {
+        display: none; /* Chrome, Safari, Opera */
+      }
+
+      /* Utility class for hiding scrollbars */
+      .scrollbar-hide {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+
+      .scrollbar-hide::-webkit-scrollbar {
+        display: none;
       }
     </style>
-
-<link rel="stylesheet" href="/index.css">
 </head>
-  <body class="bg-slate-50">
+  <body class="bg-bg-light dark:bg-slate-900">
     <div id="root"></div>
     <script type="module" src="/src/index.tsx"></script>
   </body>

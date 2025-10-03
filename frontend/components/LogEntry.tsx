@@ -7,30 +7,39 @@ interface LogEntryProps {
 }
 
 const GlucoseEntry: React.FC<{ log: GlucoseReading }> = ({ log }) => {
-  const getGlucoseColor = (value: number) => {
+  const getGlucoseStatus = (value: number) => {
     const high = log.displayUnit === 'mmol/L' ? 10 : 180;
     const low = log.displayUnit === 'mmol/L' ? 4 : 70;
-    if (value > high) return 'text-red-500';
-    if (value < low) return 'text-orange-500';
-    return 'text-blue-600';
+    if (value > high) return { status: 'HIGH', color: 'bg-red-500' };
+    if (value < low) return { status: 'LOW', color: 'bg-orange-500' };
+    return null;
   };
+
+  const status = getGlucoseStatus(log.value);
 
   return (
     <div className="flex items-center space-x-3">
-      <div className="bg-blue-100 rounded-full p-2">
-        <DropletIcon className="w-5 h-5 text-blue-600" />
+      <div className="bg-accent-blue bg-opacity-10 dark:bg-opacity-20 rounded-full p-2">
+        <DropletIcon className="w-5 h-5 text-accent-blue dark:text-accent-blue-light" />
       </div>
       <div className="flex-1">
-        <p className="font-semibold text-slate-700 text-sm">Glucose Reading</p>
-        <p className="text-xs text-slate-500 capitalize">{log.context.replace('_', ' ')}</p>
+        <p className="font-semibold text-text-primary dark:text-slate-100 text-sm">Glucose Reading</p>
+        <p className="text-xs text-text-secondary dark:text-slate-400 capitalize">{log.context.replace('_', ' ')}</p>
       </div>
-      <div className="flex items-baseline space-x-1">
-        <p className={`text-xl font-bold ${getGlucoseColor(log.value)}`}>{log.value}</p>
-        <p className="text-xs text-slate-500">{log.displayUnit}</p>
+      <div className="flex items-center space-x-2">
+        <div className="flex items-baseline space-x-1">
+          <p className="text-xl font-bold text-accent-blue dark:text-accent-blue-light">{log.value}</p>
+          <p className="text-xs text-text-light dark:text-slate-500">{log.displayUnit}</p>
+        </div>
+        {status && (
+          <span className={`${status.color} text-white text-xs font-semibold px-2 py-0.5 rounded-full`}>
+            {status.status}
+          </span>
+        )}
       </div>
-      {log.source === 'voice' && <MicIcon className="w-4 h-4 text-slate-400" />}
-      {log.source === 'manual' && <PencilIcon className="w-4 h-4 text-slate-400" />}
-      {log.source === 'photo_analysis' && <CameraIcon className="w-4 h-4 text-slate-400" />}
+      {log.source === 'voice' && <MicIcon className="w-4 h-4 text-accent-blue dark:text-accent-blue-light" />}
+      {log.source === 'manual' && <PencilIcon className="w-4 h-4 text-accent-blue dark:text-accent-blue-light" />}
+      {log.source === 'photo_analysis' && <CameraIcon className="w-4 h-4 text-accent-blue dark:text-accent-blue-light" />}
     </div>
   );
 };
@@ -38,24 +47,24 @@ const GlucoseEntry: React.FC<{ log: GlucoseReading }> = ({ log }) => {
 const MealEntry: React.FC<{ log: Meal }> = ({ log }) => {
   return (
     <div className="flex items-start space-x-3">
-      <div className="bg-green-100 rounded-full p-2">
-        <ForkSpoonIcon className="w-5 h-5 text-green-600" />
+      <div className="bg-accent-green bg-opacity-10 dark:bg-opacity-20 rounded-full p-2">
+        <ForkSpoonIcon className="w-5 h-5 text-accent-green dark:text-primary-light" />
       </div>
       <div className="flex-1">
-        <p className="font-semibold text-slate-700 capitalize text-sm">{log.mealType}</p>
-        <p className="text-xs text-slate-500">
+        <p className="font-semibold text-text-primary dark:text-slate-100 capitalize text-sm">{log.mealType}</p>
+        <p className="text-xs text-text-secondary dark:text-slate-400">
           {log.foodItems.map(item => item.name).join(', ')}
         </p>
-        <p className="text-xs text-slate-500 mt-1">
+        <p className="text-xs text-text-secondary dark:text-slate-400 mt-1">
           <span className="font-medium">{log.totalNutrition.carbs}g</span> carbs
         </p>
       </div>
       {/* FIX: Wrap icon in a span with a title to fix prop type error. */}
-      {log.source === 'voice' && <span title="Logged by voice"><MicIcon className="w-4 h-4 text-slate-400 self-center" /></span>}
+      {log.source === 'voice' && <span title="Logged by voice"><MicIcon className="w-4 h-4 text-primary dark:text-primary-light self-center" /></span>}
       {/* FIX: Wrap icon in a span with a title to fix prop type error. */}
-      {log.source === 'manual' && <span title="Logged manually"><PencilIcon className="w-4 h-4 text-slate-400 self-center" /></span>}
+      {log.source === 'manual' && <span title="Logged manually"><PencilIcon className="w-4 h-4 text-primary dark:text-primary-light self-center" /></span>}
       {log.photoUrl && (
-        <img src={log.photoUrl} alt={log.mealType} className="w-16 h-16 rounded-lg object-cover" />
+        <img src={log.photoUrl} alt={log.mealType} className="w-16 h-16 rounded-card object-cover shadow-card" />
       )}
     </div>
   );
@@ -64,15 +73,15 @@ const MealEntry: React.FC<{ log: Meal }> = ({ log }) => {
 const MedicationEntry: React.FC<{ log: Medication }> = ({ log }) => {
   return (
     <div className="flex items-center space-x-3">
-      <div className="bg-purple-100 rounded-full p-2">
-        <PillIcon className="w-5 h-5 text-purple-600" />
+      <div className="bg-accent-purple bg-opacity-10 dark:bg-opacity-20 rounded-full p-2">
+        <PillIcon className="w-5 h-5 text-accent-purple dark:text-purple-400" />
       </div>
       <div className="flex-1">
-        <p className="font-semibold text-slate-700 text-sm">{log.name}</p>
-        <p className="text-xs text-slate-500">{`${log.quantity} x ${log.dosage}${log.unit}`}</p>
+        <p className="font-semibold text-text-primary dark:text-slate-100 text-sm">{log.name}</p>
+        <p className="text-xs text-text-secondary dark:text-slate-400">{`${log.quantity} x ${log.dosage}${log.unit}`}</p>
       </div>
-       {log.source === 'voice' && <MicIcon className="w-4 h-4 text-slate-400" />}
-      {log.source === 'manual' && <PencilIcon className="w-4 h-4 text-slate-400" />}
+       {log.source === 'voice' && <MicIcon className="w-4 h-4 text-accent-purple dark:text-purple-400" />}
+      {log.source === 'manual' && <PencilIcon className="w-4 h-4 text-accent-purple dark:text-purple-400" />}
     </div>
   );
 };
@@ -80,42 +89,63 @@ const MedicationEntry: React.FC<{ log: Medication }> = ({ log }) => {
 const WeightEntry: React.FC<{ log: WeightReading }> = ({ log }) => {
     return (
       <div className="flex items-center space-x-3">
-        <div className="bg-teal-100 rounded-full p-2">
-          <WeightScaleIcon className="w-5 h-5 text-teal-600" />
+        <div className="bg-accent-orange bg-opacity-10 dark:bg-opacity-20 rounded-full p-2">
+          <WeightScaleIcon className="w-5 h-5 text-accent-orange" />
         </div>
         <div className="flex-1">
-          <p className="font-semibold text-slate-700 text-sm">Weight Reading</p>
-          <p className="text-xs text-slate-500">Logged {log.source === 'voice' ? 'by voice' : (log.source === 'photo_analysis' ? 'by photo' : 'manually')}</p>
+          <p className="font-semibold text-text-primary dark:text-slate-100 text-sm">Weight Reading</p>
+          <p className="text-xs text-text-secondary dark:text-slate-400">Logged {log.source === 'voice' ? 'by voice' : (log.source === 'photo_analysis' ? 'by photo' : 'manually')}</p>
         </div>
         <div className="flex items-baseline space-x-1">
-          <p className={`text-xl font-bold text-teal-600`}>{log.value}</p>
-          <p className="text-xs text-slate-500">{log.unit}</p>
+          <p className="text-xl font-bold text-accent-orange">{log.value}</p>
+          <p className="text-xs text-text-light dark:text-slate-500">{log.unit}</p>
         </div>
-        {log.source === 'voice' && <MicIcon className="w-4 h-4 text-slate-400" />}
-        {log.source === 'manual' && <PencilIcon className="w-4 h-4 text-slate-400" />}
-        {log.source === 'photo_analysis' && <CameraIcon className="w-4 h-4 text-slate-400" />}
+        {log.source === 'voice' && <MicIcon className="w-4 h-4 text-accent-orange" />}
+        {log.source === 'manual' && <PencilIcon className="w-4 h-4 text-accent-orange" />}
+        {log.source === 'photo_analysis' && <CameraIcon className="w-4 h-4 text-accent-orange" />}
       </div>
     );
 };
   
 const BloodPressureEntry: React.FC<{ log: BloodPressureReading }> = ({ log }) => {
+    const getBPStatus = (systolic: number, diastolic: number) => {
+        // High BP: Systolic >= 140 or Diastolic >= 90
+        if (systolic >= 140 || diastolic >= 90) {
+            return { status: 'HIGH', color: 'bg-red-500' };
+        }
+        // Elevated: Systolic 120-139 or Diastolic 80-89
+        if (systolic >= 120 || diastolic >= 80) {
+            return { status: 'ELEVATED', color: 'bg-orange-500' };
+        }
+        return null;
+    };
+
+    const status = getBPStatus(log.systolic, log.diastolic);
+
     return (
         <div className="flex items-center space-x-3">
-        <div className="bg-indigo-100 rounded-full p-2">
-            <BloodPressureIcon className="w-5 h-5 text-indigo-600" />
+        <div className="bg-accent-pink bg-opacity-10 dark:bg-opacity-20 rounded-full p-2">
+            <BloodPressureIcon className="w-5 h-5 text-accent-pink" />
         </div>
         <div className="flex-1">
-            <p className="font-semibold text-slate-700 text-sm">Blood Pressure</p>
-            <p className="text-xs text-slate-500">Pulse: {log.pulse} bpm</p>
+            <p className="font-semibold text-text-primary dark:text-slate-100 text-sm">Blood Pressure</p>
+            <p className="text-xs text-text-secondary dark:text-slate-400">Pulse: {log.pulse} bpm</p>
         </div>
-        <div className="text-right">
-            <p className={`text-xl font-bold text-indigo-600`}>{log.systolic} / {log.diastolic}</p>
-            <p className="text-xs text-slate-500">mmHg</p>
+        <div className="flex items-center space-x-2">
+            <div className="text-right">
+                <p className="text-xl font-bold text-accent-pink">{log.systolic} / {log.diastolic}</p>
+                <p className="text-xs text-text-light dark:text-slate-500">mmHg</p>
+            </div>
+            {status && (
+                <span className={`${status.color} text-white text-xs font-semibold px-2 py-0.5 rounded-full`}>
+                    {status.status}
+                </span>
+            )}
         </div>
         <div className="flex flex-col items-center justify-center pl-2 space-y-1">
-            {log.source === 'voice' && <MicIcon className="w-4 h-4 text-slate-400" />}
-            {log.source === 'manual' && <PencilIcon className="w-4 h-4 text-slate-400" />}
-            {log.source === 'photo_analysis' && <CameraIcon className="w-4 h-4 text-slate-400" />}
+            {log.source === 'voice' && <MicIcon className="w-4 h-4 text-accent-pink" />}
+            {log.source === 'manual' && <PencilIcon className="w-4 h-4 text-accent-pink" />}
+            {log.source === 'photo_analysis' && <CameraIcon className="w-4 h-4 text-accent-pink" />}
         </div>
         </div>
     );
@@ -153,13 +183,13 @@ const LogEntry: React.FC<LogEntryProps> = ({ log }) => {
   };
 
   return (
-    <div className="bg-white p-3 rounded-xl shadow-sm flex items-start space-x-3">
-      <div className="text-center w-16">
-        <p className="font-semibold text-slate-700">{timeString}</p>
-        <p className="text-xs text-slate-500">{ampm}</p>
-        <p className="text-xs text-slate-400 mt-0.5">{dateString}</p>
+    <div className="bg-white dark:bg-slate-800 p-2 sm:p-4 rounded-card shadow-card hover:shadow-card-hover transition-all duration-300 flex items-start space-x-2 sm:space-x-3 border border-transparent dark:border-slate-700">
+      <div className="text-center w-12 sm:w-16">
+        <p className="text-sm sm:text-base font-semibold text-text-primary dark:text-slate-100">{timeString}</p>
+        <p className="text-xs text-text-secondary dark:text-slate-400">{ampm}</p>
+        <p className="text-xs text-text-light dark:text-slate-500 mt-0.5">{dateString}</p>
       </div>
-      <div className="border-l border-slate-200 pl-3 flex-1">
+      <div className="border-l border-slate-200 dark:border-slate-700 pl-2 sm:pl-3 flex-1">
         {renderContent()}
       </div>
     </div>

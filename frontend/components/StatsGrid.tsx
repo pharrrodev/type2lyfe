@@ -29,36 +29,54 @@ const StatsGrid: React.FC<StatsGridProps> = ({ readings, weightReadings, bloodPr
 
     return (
         <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white p-4 rounded-xl shadow-sm text-center">
-                <p className="text-sm text-slate-500">Latest Glucose</p>
+            {/* Latest Glucose Card */}
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-card shadow-card hover:shadow-card-hover transition-all duration-300 text-center border border-border-light dark:border-slate-700">
+                <p className="text-sm font-normal text-text-secondary dark:text-slate-400 mb-3">Latest Glucose</p>
                 {latestGlucose ? (
-                    <p className="text-2xl font-bold text-blue-600 mt-1">{latestGlucose.value} <span className="text-lg font-normal">{unit}</span></p>
+                    <p className="text-4xl font-bold text-accent-blue dark:text-accent-blue-light">
+                        {latestGlucose.value}
+                        <span className="text-base font-normal text-text-secondary dark:text-slate-400 ml-1">{unit}</span>
+                    </p>
                 ) : (
-                    <p className="text-2xl font-bold text-slate-400 mt-1">-</p>
+                    <p className="text-4xl font-bold text-text-light dark:text-slate-600">-</p>
                 )}
             </div>
-             <div className="bg-white p-4 rounded-xl shadow-sm text-center">
-                <p className="text-sm text-slate-500">24h Average</p>
+
+            {/* 24h Average Card */}
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-card shadow-card hover:shadow-card-hover transition-all duration-300 text-center border border-border-light dark:border-slate-700">
+                <p className="text-sm font-normal text-text-secondary dark:text-slate-400 mb-3">24h Average</p>
                 {average ? (
-                    <p className="text-2xl font-bold text-green-600 mt-1">{average} <span className="text-lg font-normal">{unit}</span></p>
+                    <p className="text-4xl font-bold text-accent-blue dark:text-accent-blue-light">
+                        {average}
+                        <span className="text-base font-normal text-text-secondary dark:text-slate-400 ml-1">{unit}</span>
+                    </p>
                 ) : (
-                    <p className="text-2xl font-bold text-slate-400 mt-1">-</p>
+                    <p className="text-4xl font-bold text-text-light dark:text-slate-600">-</p>
                 )}
             </div>
-            <div className="bg-white p-4 rounded-xl shadow-sm text-center">
-                <p className="text-sm text-slate-500">Latest Weight</p>
+
+            {/* Latest Weight Card */}
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-card shadow-card hover:shadow-card-hover transition-all duration-300 text-center border border-border-light dark:border-slate-700">
+                <p className="text-sm font-normal text-text-secondary dark:text-slate-400 mb-3">Latest Weight</p>
                 {latestWeight ? (
-                    <p className="text-2xl font-bold text-teal-600 mt-1">{latestWeight.value} <span className="text-lg font-normal">{latestWeight.unit}</span></p>
+                    <p className="text-4xl font-bold text-accent-blue dark:text-accent-blue-light">
+                        {latestWeight.value}
+                        <span className="text-base font-normal text-text-secondary dark:text-slate-400 ml-1">{latestWeight.unit}</span>
+                    </p>
                 ) : (
-                    <p className="text-2xl font-bold text-slate-400 mt-1">-</p>
+                    <p className="text-4xl font-bold text-text-light dark:text-slate-600">-</p>
                 )}
             </div>
-            <div className="bg-white p-4 rounded-xl shadow-sm text-center">
-                <p className="text-sm text-slate-500">Latest BP</p>
+
+            {/* Latest Blood Pressure Card */}
+            <div className="bg-white dark:bg-slate-800 p-6 rounded-card shadow-card hover:shadow-card-hover transition-all duration-300 text-center border border-border-light dark:border-slate-700">
+                <p className="text-sm font-normal text-text-secondary dark:text-slate-400 mb-3">Latest BP</p>
                 {latestBP ? (
-                    <p className="text-2xl font-bold text-indigo-600 mt-1">{latestBP.systolic}/{latestBP.diastolic}</p>
+                    <p className="text-4xl font-bold text-accent-blue dark:text-accent-blue-light">
+                        {latestBP.systolic}/{latestBP.diastolic}
+                    </p>
                 ) : (
-                    <p className="text-2xl font-bold text-slate-400 mt-1">-</p>
+                    <p className="text-4xl font-bold text-text-light dark:text-slate-600">-</p>
                 )}
             </div>
         </section>

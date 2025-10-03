@@ -14,7 +14,7 @@ interface HistoryPageProps {
 
 const HistoryPage: React.FC<HistoryPageProps> = (props) => {
     return (
-        <div className="h-full overflow-y-auto">
+        <div className="h-full overflow-y-auto scrollbar-hide">
             <LateEntryForm {...props} />
         </div>
     );

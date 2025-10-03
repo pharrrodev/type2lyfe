@@ -43,9 +43,22 @@ async function analyzeMealPhoto(image, mimeType) {
     model: "gemini-2.5-flash",
     generationConfig: {
       responseMimeType: "application/json",
+      temperature: 0.2, // Lower temperature for more consistent JSON
     }
   });
-  const prompt = 'Analyze the food items in this image. Identify each item, estimate its nutritional content (calories, protein, carbs, fat), and provide a total for the entire meal. The user is in the UK. Return a JSON object with "items" array (each with "name", "calories", "protein", "carbs", "fat") and "total" object with overall nutritional values.';
+  const prompt = `Analyze the food items in this image. Identify each item, estimate its nutritional content (calories, protein, carbs, fat, sugar), and provide a total for the entire meal. The user is in the UK.
+
+IMPORTANT: Return ONLY valid JSON. Ensure every object has proper closing braces.
+
+Required JSON structure:
+{
+  "items": [
+    {"name": "Food Name", "calories": 100, "protein": 10, "carbs": 10, "fat": 5, "sugar": 3}
+  ],
+  "total": {"calories": 100, "protein": 10, "carbs": 10, "fat": 5, "sugar": 3}
+}
+
+Each item MUST have all 6 fields: name, calories, protein, carbs, fat, sugar (in grams).`;
   const imagePart = {
     inlineData: {
       data: image,
@@ -57,19 +70,97 @@ async function analyzeMealPhoto(image, mimeType) {
   const response = await result.response;
   const text = response.text();
 
+  console.log("🔍 Raw AI response:", text);
+
   // Clean the response text to remove markdown formatting
-  const cleanedJsonString = text
+  let cleanedJsonString = text
     .replace(/^```json\s*/, '') // Remove the starting ```json
     .replace(/```$/, '')        // Remove the ending ```
     .trim();                    // Remove any extra whitespace
 
+  // Try to repair common JSON errors
+  // Fix pattern: "sugar": 14.0\n    , (missing closing brace)
+  // Should be: "sugar": 14.0\n    },
+  cleanedJsonString = cleanedJsonString.replace(/("sugar":\s*\d+\.?\d*)\s*\n\s*,/g, '$1\n    },');
+  // Also fix the old "fat" pattern for backward compatibility
+  cleanedJsonString = cleanedJsonString.replace(/("fat":\s*\d+\.?\d*)\s*\n\s*,/g, '$1\n    },');
+
+  console.log("🧹 Cleaned JSON string:", cleanedJsonString);
+
   try {
-    return JSON.parse(cleanedJsonString);
+    const parsed = JSON.parse(cleanedJsonString);
+    console.log("✅ Successfully parsed meal analysis:", JSON.stringify(parsed, null, 2));
+
+    // Validate that all required fields are present
+    if (!parsed.items || !Array.isArray(parsed.items)) {
+      throw new Error("Missing or invalid 'items' array");
+    }
+    if (!parsed.total || typeof parsed.total !== 'object') {
+      throw new Error("Missing or invalid 'total' object");
+    }
+
+    // Validate each item has all required fields
+    const requiredFields = ['name', 'calories', 'protein', 'carbs', 'fat', 'sugar'];
+    parsed.items.forEach((item, index) => {
+      requiredFields.forEach(field => {
+        if (!(field in item)) {
+          console.warn(`⚠️ Item ${index} missing field: ${field}, setting to 0`);
+          item[field] = field === 'name' ? 'Unknown' : 0;
+        }
+      });
+    });
+
+    // Validate total has all required numeric fields
+    const numericFields = ['calories', 'protein', 'carbs', 'fat', 'sugar'];
+    numericFields.forEach(field => {
+      if (!(field in parsed.total)) {
+        console.warn(`⚠️ Total missing field: ${field}, setting to 0`);
+        parsed.total[field] = 0;
+      }
+    });
+
+    console.log("✅ Validated meal analysis:", JSON.stringify(parsed, null, 2));
+    return parsed;
   } catch (error) {
     console.error("❌ Failed to parse meal photo JSON:", error);
     console.error("❌ Raw response text:", text);
     console.error("❌ Cleaned text:", cleanedJsonString);
-    throw new Error("Invalid JSON response from AI.");
+
+    // Try one more repair attempt: add missing closing braces
+    try {
+      const repairedJson = cleanedJsonString.replace(/(\d+\.?\d*)\s*,\s*$/gm, '$1\n    },');
+      const parsed = JSON.parse(repairedJson);
+      console.log("✅ JSON repaired successfully!");
+      console.log("✅ Repaired meal analysis:", JSON.stringify(parsed, null, 2));
+
+      // Validate repaired JSON as well
+      const requiredFields = ['name', 'calories', 'protein', 'carbs', 'fat', 'sugar'];
+      if (parsed.items && Array.isArray(parsed.items)) {
+        parsed.items.forEach((item, index) => {
+          requiredFields.forEach(field => {
+            if (!(field in item)) {
+              console.warn(`⚠️ Item ${index} missing field: ${field}, setting to 0`);
+              item[field] = field === 'name' ? 'Unknown' : 0;
+            }
+          });
+        });
+      }
+
+      const numericFields = ['calories', 'protein', 'carbs', 'fat', 'sugar'];
+      if (parsed.total && typeof parsed.total === 'object') {
+        numericFields.forEach(field => {
+          if (!(field in parsed.total)) {
+            console.warn(`⚠️ Total missing field: ${field}, setting to 0`);
+            parsed.total[field] = 0;
+          }
+        });
+      }
+
+      return parsed;
+    } catch (repairError) {
+      console.error("❌ JSON repair also failed:", repairError);
+      throw new Error("Invalid JSON response from AI.");
+    }
   }
 }
 

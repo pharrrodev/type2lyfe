@@ -37,6 +37,7 @@ export interface FoodItem {
   protein: number;
   carbs: number;
   fat: number;
+  sugar: number;
 }
 
 export interface Meal {
@@ -49,6 +50,7 @@ export interface Meal {
     protein: number;
     carbs: number;
     fat: number;
+    sugar: number;
   };
   mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
   notes?: string;

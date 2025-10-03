@@ -64,7 +64,8 @@ const WeightLogModal: React.FC<WeightLogModalProps> = ({ isOpen, onClose, onAddR
     setIsLoading(true);
     setError('');
     try {
-      const result = await parseWeightFromText(textToParse);
+      const response = await analyzeWeightFromText(textToParse);
+      const result = response.data;
       if (result) {
         setParsedData(result);
         setVoiceStep('confirm');
@@ -102,7 +103,16 @@ const WeightLogModal: React.FC<WeightLogModalProps> = ({ isOpen, onClose, onAddR
     if (isListening) return;
     resetVoiceState();
     setIsListening(true);
-    if (!aiRef.current) aiRef.current = new GoogleGenAI({ apiKey: process.env.API_KEY! });
+    setError('');
+    if (!aiRef.current) {
+        const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+        if (!apiKey) {
+            setError('Gemini API key not configured. Please add VITE_GEMINI_API_KEY to .env.local');
+            setIsListening(false);
+            return;
+        }
+        aiRef.current = new GoogleGenAI({ apiKey });
+    }
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         streamRef.current = stream;
@@ -244,26 +254,26 @@ const WeightLogModal: React.FC<WeightLogModalProps> = ({ isOpen, onClose, onAddR
     <div className="min-h-[220px]">
       {voiceStep === 'say_reading' && (
         <div className="text-center py-4 flex flex-col items-center">
-          <p className="text-slate-600 mb-4">{isListening ? 'Tap icon to stop recording.' : 'Tap icon and say your weight, like "85 kilograms".'}</p>
-          <button onClick={() => isListening ? stopListening() : startListening()} disabled={isLoading} className={`mx-auto w-20 h-20 rounded-full flex items-center justify-center transition-colors ${isListening ? 'bg-red-500' : 'bg-teal-600 hover:bg-teal-700'} text-white disabled:bg-slate-400`}>
+          <p className="text-text-secondary mb-4 font-medium">{isListening ? 'Tap icon to stop recording.' : 'Tap icon and say your weight, like "85 kilograms".'}</p>
+          <button onClick={() => isListening ? stopListening() : startListening()} disabled={isLoading} className={`mx-auto w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 ${isListening ? 'bg-accent-pink text-white shadow-lg' : 'bg-gradient-to-br from-primary to-primary-dark text-white hover:shadow-fab'} disabled:bg-slate-300`}>
             {isLoading ? <Spinner /> : (isListening ? <SquareIcon className="w-7 h-7" /> : <MicIcon className="w-8 h-8" />)}
           </button>
-          <p className="text-slate-700 mt-4 min-h-[48px] px-2">{transcript || (isListening ? <span className="text-slate-500">Listening...</span> : '')}</p>
+          <p className="text-text-primary mt-4 min-h-[48px] px-2">{transcript || (isListening ? <span className="text-text-secondary">Listening...</span> : '')}</p>
         </div>
       )}
       {voiceStep === 'confirm' && parsedData && (
-        <div className="mt-4 p-4 bg-slate-100 rounded-lg">
+        <div className="mt-4 p-5 bg-primary/5 rounded-card border-2 border-primary/30">
           <div className="text-center">
-            <p className="text-slate-600">Is this correct?</p>
-            <p className="text-3xl font-bold text-teal-600 my-2">{parsedData.value} <span className="text-lg font-normal">{parsedData.unit}</span></p>
+            <p className="text-text-secondary font-medium">Is this correct?</p>
+            <p className="text-4xl font-bold text-accent-orange my-2">{parsedData.value} <span className="text-lg font-normal text-text-light">{parsedData.unit}</span></p>
           </div>
           <div className="grid grid-cols-2 gap-3 mt-6">
-            <button onClick={resetVoiceState} className="w-full bg-slate-200 text-slate-700 font-semibold py-3 rounded-md hover:bg-slate-300">Start Over</button>
-            <button onClick={handleVoiceSubmit} className="w-full bg-green-600 text-white font-semibold py-3 rounded-md hover:bg-green-700">Confirm & Save</button>
+            <button onClick={resetVoiceState} className="w-full bg-white border-2 border-primary/20 text-text-primary font-semibold py-3 rounded-button hover:bg-primary/5 hover:border-primary transition-all duration-300 shadow-card">Start Over</button>
+            <button onClick={handleVoiceSubmit} className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300">Confirm & Save</button>
           </div>
         </div>
       )}
-      {error && <p className="text-red-500 text-center mt-4">{error}</p>}
+      {error && <p className="text-accent-pink text-center mt-4 font-medium">{error}</p>}
     </div>
   );
 
@@ -271,19 +281,19 @@ const WeightLogModal: React.FC<WeightLogModalProps> = ({ isOpen, onClose, onAddR
     <form onSubmit={handleManualSubmit} className="space-y-4 pt-4 min-h-[220px]">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label htmlFor="weight-value" className="block text-sm font-medium text-slate-700">Weight</label>
-          <input type="number" id="weight-value" value={manualValue} onChange={e => setManualValue(e.target.value)} step="0.1" required className="mt-1 block w-full bg-white text-slate-900 rounded-md border-slate-300 shadow-sm p-2" />
+          <label htmlFor="weight-value" className="block text-sm font-semibold text-text-primary mb-2">Weight</label>
+          <input type="number" id="weight-value" value={manualValue} onChange={e => setManualValue(e.target.value)} step="0.1" required className="block w-full bg-white text-text-primary rounded-button border-2 border-primary/20 shadow-sm focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300 p-3" />
         </div>
         <div>
-          <label htmlFor="weight-unit" className="block text-sm font-medium text-slate-700">Unit</label>
-          <select id="weight-unit" value={manualUnit} onChange={e => setManualUnit(e.target.value as 'kg' | 'lbs')} className="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-2 bg-white">
+          <label htmlFor="weight-unit" className="block text-sm font-semibold text-text-primary mb-2">Unit</label>
+          <select id="weight-unit" value={manualUnit} onChange={e => setManualUnit(e.target.value as 'kg' | 'lbs')} className="block w-full bg-white text-text-primary rounded-button border-2 border-primary/20 shadow-sm focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300 px-3 py-3">
             <option value="kg">kg</option>
             <option value="lbs">lbs</option>
           </select>
         </div>
       </div>
-      {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-      <button type="submit" className="w-full bg-teal-600 text-white font-semibold py-3 rounded-md hover:bg-teal-700">Save Log</button>
+      {error && <p className="text-accent-pink text-sm text-center font-medium">{error}</p>}
+      <button type="submit" className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300">Save Log</button>
     </form>
   );
 
@@ -293,46 +303,46 @@ const WeightLogModal: React.FC<WeightLogModalProps> = ({ isOpen, onClose, onAddR
         <div>
           {!previewUrl ? (
             <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
-              <button onClick={() => { fileInputRef.current?.setAttribute('capture', 'environment'); fileInputRef.current?.click(); }} className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center hover:border-teal-500 flex flex-col items-center justify-center"><CameraIcon className="w-10 h-10 text-slate-400 mb-2" /><span>Take Picture</span></button>
-              <button onClick={() => { fileInputRef.current?.removeAttribute('capture'); fileInputRef.current?.click(); }} className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center hover:border-teal-500 flex flex-col items-center justify-center"><UploadIcon className="w-10 h-10 text-slate-400 mb-2" /><span>Upload Photo</span></button>
+              <button onClick={() => { fileInputRef.current?.setAttribute('capture', 'environment'); fileInputRef.current?.click(); }} className="border-2 border-dashed border-primary/30 rounded-card p-8 text-center text-text-secondary hover:bg-primary/5 hover:border-primary transition-all duration-300 flex flex-col items-center justify-center"><CameraIcon className="w-10 h-10 text-primary mb-2" /><span>Take Picture</span></button>
+              <button onClick={() => { fileInputRef.current?.removeAttribute('capture'); fileInputRef.current?.click(); }} className="border-2 border-dashed border-primary/30 rounded-card p-8 text-center text-text-secondary hover:bg-primary/5 hover:border-primary transition-all duration-300 flex flex-col items-center justify-center"><UploadIcon className="w-10 h-10 text-primary mb-2" /><span>Upload Photo</span></button>
               <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
             </div>
           ) : (
             <div className="space-y-4">
-              <img src={previewUrl} alt="Weight scale preview" className="rounded-lg w-full max-h-48 object-contain" />
-              <button onClick={handlePhotoAnalyze} disabled={isLoading} className="w-full bg-blue-600 text-white font-semibold py-3 rounded-md hover:bg-blue-700 disabled:bg-slate-300 flex items-center justify-center">{isLoading ? <Spinner /> : 'Analyze Weight'}</button>
+              <img src={previewUrl} alt="Weight scale preview" className="rounded-card w-full max-h-48 object-contain shadow-card" />
+              <button onClick={handlePhotoAnalyze} disabled={isLoading} className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300 disabled:from-slate-300 disabled:to-slate-300 flex items-center justify-center">{isLoading ? <Spinner /> : 'Analyze Weight'}</button>
             </div>
           )}
         </div>
       )}
       {photoStep === 'confirm' && parsedData && (
-        <div className="mt-4 p-4 bg-slate-100 rounded-lg">
+        <div className="mt-4 p-5 bg-primary/5 rounded-card border-2 border-primary/30">
           <div className="text-center">
-            <p className="text-slate-600">Is this correct?</p>
-            <p className="text-3xl font-bold text-teal-600 my-2">{parsedData.value} <span className="text-lg font-normal">{parsedData.unit}</span></p>
+            <p className="text-text-secondary font-medium">Is this correct?</p>
+            <p className="text-4xl font-bold text-accent-orange my-2">{parsedData.value} <span className="text-lg font-normal text-text-light">{parsedData.unit}</span></p>
           </div>
           <div className="grid grid-cols-2 gap-3 mt-6">
-            <button onClick={resetPhotoState} className="w-full bg-slate-200 text-slate-700 font-semibold py-3 rounded-md hover:bg-slate-300">Start Over</button>
-            <button onClick={handlePhotoSubmit} className="w-full bg-green-600 text-white font-semibold py-3 rounded-md hover:bg-green-700">Confirm & Save</button>
+            <button onClick={resetPhotoState} className="w-full bg-white border-2 border-primary/20 text-text-primary font-semibold py-3 rounded-button hover:bg-primary/5 hover:border-primary transition-all duration-300 shadow-card">Start Over</button>
+            <button onClick={handlePhotoSubmit} className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300">Confirm & Save</button>
           </div>
         </div>
       )}
-      {error && <p className="text-red-500 text-center mt-4">{error}</p>}
+      {error && <p className="text-accent-pink text-center mt-4 font-medium">{error}</p>}
     </div>
   );
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6 relative animate-fade-in-up">
-        <button onClick={onClose} className="absolute top-4 right-4 text-slate-500 hover:text-slate-700"><XIcon className="w-6 h-6" /></button>
-        <div className="flex items-center space-x-3 mb-4">
-          <WeightScaleIcon className="w-7 h-7 text-teal-600" />
-          <h2 className="text-2xl font-bold text-slate-800">Log Weight</h2>
+      <div className="bg-white rounded-modal shadow-modal w-full max-w-md p-6 relative animate-fade-in-up">
+        <button onClick={onClose} className="absolute top-4 right-4 text-text-light hover:text-primary transition-all duration-300"><XIcon className="w-6 h-6" /></button>
+        <div className="flex items-center space-x-3 mb-5">
+          <WeightScaleIcon className="w-7 h-7 text-accent-orange" />
+          <h2 className="text-2xl font-bold text-text-primary">Log Weight</h2>
         </div>
         <div className="flex border-b border-slate-200 mb-2">
-          <button onClick={() => { setActiveTab('voice'); resetManualState(); resetPhotoState(); }} className={`px-4 py-2 text-sm font-medium flex items-center space-x-2 ${activeTab === 'voice' ? 'border-b-2 border-teal-600 text-teal-600' : 'text-slate-500'}`}><MicIcon className="w-4 h-4" /><span>Voice</span></button>
-          <button onClick={() => { setActiveTab('manual'); resetVoiceState(); resetPhotoState(); }} className={`px-4 py-2 text-sm font-medium flex items-center space-x-2 ${activeTab === 'manual' ? 'border-b-2 border-teal-600 text-teal-600' : 'text-slate-500'}`}><PencilIcon className="w-4 h-4" /><span>Manual</span></button>
-          <button onClick={() => { setActiveTab('photo'); resetVoiceState(); resetManualState(); }} className={`px-4 py-2 text-sm font-medium flex items-center space-x-2 ${activeTab === 'photo' ? 'border-b-2 border-teal-600 text-teal-600' : 'text-slate-500'}`}><CameraIcon className="w-4 h-4" /><span>Photo</span></button>
+          <button onClick={() => { setActiveTab('voice'); resetManualState(); resetPhotoState(); }} className={`px-4 py-2 text-sm font-semibold flex items-center space-x-2 transition-all duration-300 ${activeTab === 'voice' ? 'border-b-2 border-primary text-primary' : 'text-text-light hover:text-primary-light'}`}><MicIcon className="w-4 h-4" /><span>Voice</span></button>
+          <button onClick={() => { setActiveTab('manual'); resetVoiceState(); resetPhotoState(); }} className={`px-4 py-2 text-sm font-semibold flex items-center space-x-2 transition-all duration-300 ${activeTab === 'manual' ? 'border-b-2 border-primary text-primary' : 'text-text-light hover:text-primary-light'}`}><PencilIcon className="w-4 h-4" /><span>Manual</span></button>
+          <button onClick={() => { setActiveTab('photo'); resetVoiceState(); resetManualState(); }} className={`px-4 py-2 text-sm font-semibold flex items-center space-x-2 transition-all duration-300 ${activeTab === 'photo' ? 'border-b-2 border-primary text-primary' : 'text-text-light hover:text-primary-light'}`}><CameraIcon className="w-4 h-4" /><span>Photo</span></button>
         </div>
         {activeTab === 'voice' && renderVoiceContent()}
         {activeTab === 'manual' && renderManualContent()}
