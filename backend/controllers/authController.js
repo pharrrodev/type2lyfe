@@ -1,11 +1,18 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { validationResult } = require('express-validator');
 const User = require('../models/User');
 
 // @desc    Register a new user
 // @route   POST /auth/register
 // @access  Public
 exports.register = async (req, res) => {
+  // Check for validation errors
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
   const { username, email, password } = req.body;
 
   try {
@@ -45,6 +52,12 @@ exports.register = async (req, res) => {
 // @route   POST /auth/login
 // @access  Public
 exports.login = async (req, res) => {
+  // Check for validation errors
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
   const { email, password } = req.body;
 
   try {

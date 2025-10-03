@@ -11,6 +11,7 @@ interface GlucoseLogModalProps {
   onClose: () => void;
   onAddReading: (reading: Omit<GlucoseReading, 'id'>) => void;
   unit: 'mg/dL' | 'mmol/L';
+  customTimestamp?: Date; // Optional: for late entries
 }
 
 // --- Audio Helper Functions ---
@@ -35,7 +36,7 @@ function createBlob(data: Float32Array): Blob {
   };
 }
 
-const GlucoseLogModal: React.FC<GlucoseLogModalProps> = ({ isOpen, onClose, onAddReading, unit }) => {
+const GlucoseLogModal: React.FC<GlucoseLogModalProps> = ({ isOpen, onClose, onAddReading, unit, customTimestamp }) => {
   const [activeTab, setActiveTab] = useState<'voice' | 'manual' | 'photo'>('voice');
 
   // Shared state
@@ -247,7 +248,7 @@ const GlucoseLogModal: React.FC<GlucoseLogModalProps> = ({ isOpen, onClose, onAd
         value: parsedData.value,
         displayUnit: unit,
         context: (parsedData.context.toLowerCase().replace(' ', '_')) as GlucoseReading['context'],
-        timestamp: new Date().toISOString(),
+        timestamp: (customTimestamp || new Date()).toISOString(),
         transcript: transcript,
         source: 'voice',
       });
@@ -283,7 +284,7 @@ const GlucoseLogModal: React.FC<GlucoseLogModalProps> = ({ isOpen, onClose, onAd
           value: valueNum,
           displayUnit: unit,
           context: manualContext,
-          timestamp: new Date().toISOString(),
+          timestamp: (customTimestamp || new Date()).toISOString(),
           source: 'manual',
       });
       console.log('🔍 GlucoseModal: Reading submitted successfully, closing modal');
@@ -356,7 +357,7 @@ const GlucoseLogModal: React.FC<GlucoseLogModalProps> = ({ isOpen, onClose, onAd
         value: parsedData.value,
         displayUnit: unit,
         context: (parsedData.context.toLowerCase().replace(' ', '_')) as GlucoseReading['context'],
-        timestamp: new Date().toISOString(),
+        timestamp: (customTimestamp || new Date()).toISOString(),
         source: 'photo_analysis',
       });
       onClose();

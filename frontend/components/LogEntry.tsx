@@ -24,7 +24,7 @@ const GlucoseEntry: React.FC<{ log: GlucoseReading }> = ({ log }) => {
       </div>
       <div className="flex-1">
         <p className="font-semibold text-text-primary dark:text-slate-100 text-sm">Glucose Reading</p>
-        <p className="text-xs text-text-secondary dark:text-slate-400 capitalize">{log.context.replace('_', ' ')}</p>
+        <p className="text-xs text-text-secondary dark:text-slate-400 capitalize">{log.context ? log.context.replace('_', ' ') : 'Random'}</p>
       </div>
       <div className="flex items-center space-x-2">
         <div className="flex items-baseline space-x-1">
@@ -53,19 +53,19 @@ const MealEntry: React.FC<{ log: Meal }> = ({ log }) => {
       <div className="flex-1">
         <p className="font-semibold text-text-primary dark:text-slate-100 capitalize text-sm">{log.mealType}</p>
         <p className="text-xs text-text-secondary dark:text-slate-400">
-          {log.foodItems.map(item => item.name).join(', ')}
+          {log.foodItems && log.foodItems.length > 0
+            ? log.foodItems.map(item => item.name).join(', ')
+            : 'Meal logged'}
         </p>
         <p className="text-xs text-text-secondary dark:text-slate-400 mt-1">
-          <span className="font-medium">{log.totalNutrition.carbs}g</span> carbs
+          <span className="font-medium">{log.totalNutrition?.carbs || 0}g</span> carbs •
+          <span className="font-medium ml-1">{log.totalNutrition?.calories || 0}</span> cal
         </p>
       </div>
-      {/* FIX: Wrap icon in a span with a title to fix prop type error. */}
+      {/* Source indicators */}
       {log.source === 'voice' && <span title="Logged by voice"><MicIcon className="w-4 h-4 text-primary dark:text-primary-light self-center" /></span>}
-      {/* FIX: Wrap icon in a span with a title to fix prop type error. */}
       {log.source === 'manual' && <span title="Logged manually"><PencilIcon className="w-4 h-4 text-primary dark:text-primary-light self-center" /></span>}
-      {log.photoUrl && (
-        <img src={log.photoUrl} alt={log.mealType} className="w-16 h-16 rounded-card object-cover shadow-card" />
-      )}
+      {log.source === 'photo_analysis' && <span title="Analyzed from photo"><CameraIcon className="w-4 h-4 text-primary dark:text-primary-light self-center" /></span>}
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import api from './services/api';
 import { GlucoseReading, Meal, Medication, LogEntry as LogEntryType, UserMedication, WeightReading, BloodPressureReading } from './types';
 import Header from '../components/Header';
@@ -6,6 +6,7 @@ import Footer from '../components/Footer';
 import Dashboard from '../components/Dashboard';
 import ActivityPage from '../components/ActivityPage';
 import HistoryPage from '../components/HistoryPage';
+import SettingsPage from '../components/SettingsPage';
 import GlucoseLogModal from '../components/GlucoseLogModal';
 import MealLogModal from '../components/MealLogModal';
 import MedicationLogModal from '../components/MedicationLogModal';
@@ -17,7 +18,7 @@ import WeightLogModal from '../components/WeightLogModal';
 import BloodPressureLogModal from '../components/BloodPressureLogModal';
 import ActionBottomSheet from '../components/ActionBottomSheet';
 
-export type Page = 'dashboard' | 'activity' | 'history';
+export type Page = 'dashboard' | 'activity' | 'history' | 'settings';
 
 const MainApp: React.FC = () => {
   const [glucoseReadings, setGlucoseReadings] = useState<GlucoseReading[]>([]);
@@ -36,7 +37,7 @@ const MainApp: React.FC = () => {
 
   const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
 
-  const [glucoseUnit] = useState<'mg/dL' | 'mmol/L'>('mmol/L');
+  const [glucoseUnit, setGlucoseUnit] = useState<'mg/dL' | 'mmol/L'>('mmol/L');
   const [activePage, setActivePage] = useState<Page>('dashboard');
 
   useEffect(() => {
@@ -186,27 +187,29 @@ const MainApp: React.FC = () => {
   }, []);
 
 
-  const combinedLogs: LogEntryType[] = [
-    ...glucoseReadings.map(r => ({ ...r, type: 'glucose' as const })),
-    ...meals.map(m => ({ ...m, type: 'meal' as const })),
-    ...medications.map(med => ({ ...med, type: 'medication' as const })),
-    ...weightReadings.map(w => ({ ...w, type: 'weight' as const })),
-    ...bloodPressureReadings.map(bp => ({ ...bp, type: 'blood_pressure' as const })),
-  ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  const combinedLogs: LogEntryType[] = useMemo(() => {
+    return [
+      ...glucoseReadings.map(r => ({ ...r, type: 'glucose' as const })),
+      ...meals.map(m => ({ ...m, type: 'meal' as const })),
+      ...medications.map(med => ({ ...med, type: 'medication' as const })),
+      ...weightReadings.map(w => ({ ...w, type: 'weight' as const })),
+      ...bloodPressureReadings.map(bp => ({ ...bp, type: 'blood_pressure' as const })),
+    ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  }, [glucoseReadings, meals, medications, weightReadings, bloodPressureReadings]);
 
   const renderContent = () => {
     switch (activePage) {
       case 'dashboard':
-        return <Dashboard 
-                    glucoseReadings={glucoseReadings} 
+        return <Dashboard
+                    glucoseReadings={glucoseReadings}
                     weightReadings={weightReadings}
                     bloodPressureReadings={bloodPressureReadings}
-                    unit={glucoseUnit} 
+                    unit={glucoseUnit}
                 />;
       case 'activity':
         return <ActivityPage logs={combinedLogs} />;
       case 'history':
-        return <HistoryPage 
+        return <HistoryPage
                     onAddGlucose={addGlucoseReading}
                     onAddMeal={addMeal}
                     onAddMedication={addMedication}
@@ -215,6 +218,12 @@ const MainApp: React.FC = () => {
                     userMedications={userMedications}
                     unit={glucoseUnit}
                 />;
+      case 'settings':
+        return <SettingsPage
+                    glucoseUnit={glucoseUnit}
+                    onGlucoseUnitChange={setGlucoseUnit}
+                    onOpenMyMedications={() => setIsMyMedicationsModalOpen(true)}
+                />;
       default:
         return null;
     }
@@ -222,7 +231,7 @@ const MainApp: React.FC = () => {
 
   return (
     <div className="h-full flex flex-col bg-bg-light dark:bg-slate-900 text-text-primary dark:text-slate-100 font-sans">
-      <Header onOpenSettings={() => setIsMyMedicationsModalOpen(true)} />
+      <Header />
 
       <main className="flex-grow container mx-auto px-4 md:px-6 py-1.5 sm:py-4 overflow-hidden">
         {renderContent()}

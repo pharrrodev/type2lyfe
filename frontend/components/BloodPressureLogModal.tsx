@@ -8,9 +8,10 @@ interface BloodPressureLogModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddReading: (reading: Omit<BloodPressureReading, 'id'>) => void;
+  customTimestamp?: Date; // Optional: for late entries
 }
 
-const BloodPressureLogModal: React.FC<BloodPressureLogModalProps> = ({ isOpen, onClose, onAddReading }) => {
+const BloodPressureLogModal: React.FC<BloodPressureLogModalProps> = ({ isOpen, onClose, onAddReading, customTimestamp }) => {
   // Voice removed - saying three separate numbers (systolic, diastolic, pulse) is cumbersome
   const [activeTab, setActiveTab] = useState<'manual' | 'photo'>('manual');
   
@@ -63,7 +64,7 @@ const BloodPressureLogModal: React.FC<BloodPressureLogModalProps> = ({ isOpen, o
       return;
     }
 
-    onAddReading({ systolic, diastolic, pulse, timestamp: new Date().toISOString(), source: 'manual' });
+    onAddReading({ systolic, diastolic, pulse, timestamp: (customTimestamp || new Date()).toISOString(), source: 'manual' });
     onClose();
   };
 
@@ -107,7 +108,7 @@ const BloodPressureLogModal: React.FC<BloodPressureLogModalProps> = ({ isOpen, o
 
   const handlePhotoSubmit = () => {
     if (parsedData) {
-      onAddReading({ ...parsedData, timestamp: new Date().toISOString(), source: 'photo_analysis' });
+      onAddReading({ ...parsedData, timestamp: (customTimestamp || new Date()).toISOString(), source: 'photo_analysis' });
       onClose();
     }
   };

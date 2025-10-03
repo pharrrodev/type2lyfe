@@ -8,7 +8,8 @@ Log.create = async (user_id, timestamp, type, data) => {
     values: [user_id, timestamp, type, data],
   };
   const { rows } = await db.query(query.text, query.values);
-  return rows[0];
+  // Return in the same format as findByUserIdAndType for consistency
+  return { id: rows[0].id, ...rows[0].data, timestamp: rows[0].timestamp };
 };
 
 Log.findByUserId = async (user_id) => {

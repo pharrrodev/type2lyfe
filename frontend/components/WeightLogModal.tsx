@@ -9,6 +9,7 @@ interface WeightLogModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddReading: (reading: Omit<WeightReading, 'id'>) => void;
+  customTimestamp?: Date; // Optional: for late entries
 }
 
 // --- Audio Helper Functions ---
@@ -33,7 +34,7 @@ function createBlob(data: Float32Array): Blob {
   };
 }
 
-const WeightLogModal: React.FC<WeightLogModalProps> = ({ isOpen, onClose, onAddReading }) => {
+const WeightLogModal: React.FC<WeightLogModalProps> = ({ isOpen, onClose, onAddReading, customTimestamp }) => {
   const [activeTab, setActiveTab] = useState<'voice' | 'manual' | 'photo'>('voice');
   const [parsedData, setParsedData] = useState<{ value: number; unit: 'kg' | 'lbs' } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -190,7 +191,7 @@ const WeightLogModal: React.FC<WeightLogModalProps> = ({ isOpen, onClose, onAddR
 
   const handleVoiceSubmit = () => {
     if (parsedData) {
-      onAddReading({ ...parsedData, timestamp: new Date().toISOString(), source: 'voice', transcript });
+      onAddReading({ ...parsedData, timestamp: (customTimestamp || new Date()).toISOString(), source: 'voice', transcript });
       onClose();
     }
   };
@@ -202,7 +203,7 @@ const WeightLogModal: React.FC<WeightLogModalProps> = ({ isOpen, onClose, onAddR
       setError('Please enter a valid weight.');
       return;
     }
-    onAddReading({ value: valueNum, unit: manualUnit, timestamp: new Date().toISOString(), source: 'manual' });
+    onAddReading({ value: valueNum, unit: manualUnit, timestamp: (customTimestamp || new Date()).toISOString(), source: 'manual' });
     onClose();
   };
 
@@ -243,7 +244,7 @@ const WeightLogModal: React.FC<WeightLogModalProps> = ({ isOpen, onClose, onAddR
 
   const handlePhotoSubmit = () => {
     if (parsedData) {
-      onAddReading({ ...parsedData, timestamp: new Date().toISOString(), source: 'photo_analysis' });
+      onAddReading({ ...parsedData, timestamp: (customTimestamp || new Date()).toISOString(), source: 'photo_analysis' });
       onClose();
     }
   };

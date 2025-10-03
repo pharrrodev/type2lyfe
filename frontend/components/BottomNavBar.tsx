@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChartBarIcon, ListChecksIcon, CalendarDaysIcon } from './Icons';
+import { ChartBarIcon, ListChecksIcon, CalendarDaysIcon, SettingsIcon } from './Icons';
 import { Page } from '../src/MainApp';
 
 interface BottomNavBarProps {
@@ -16,6 +16,7 @@ const NavButton: React.FC<{
 }> = ({ page, label, icon, isActive, onClick }) => {
     return (
         <button
+            type="button"
             onClick={onClick}
             className={`flex flex-col items-center justify-center w-full pt-3 pb-2 transition-all duration-300 ${
                 isActive
@@ -54,6 +55,13 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({ activePage, onNavigate }) =
                     icon={<CalendarDaysIcon className="w-6 h-6" />}
                     isActive={activePage === 'history'}
                     onClick={() => onNavigate('history')}
+                />
+                <NavButton
+                    page="settings"
+                    label="Settings"
+                    icon={<SettingsIcon className="w-6 h-6" />}
+                    isActive={activePage === 'settings'}
+                    onClick={() => onNavigate('settings')}
                 />
             </div>
         </nav>

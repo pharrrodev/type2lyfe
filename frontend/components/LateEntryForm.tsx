@@ -587,10 +587,10 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
                 break;
             case 'photo':
                 if (!analysisResult) return;
+                // Photo is used only for analysis, not stored in database
                 mealData = {
                     foodItems: analysisResult.items,
                     totalNutrition: analysisResult.total,
-                    photoUrl: mealPreviewUrl || undefined,
                     source: 'photo_analysis'
                 };
                 break;

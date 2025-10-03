@@ -7,9 +7,10 @@ interface MedicationLogModalProps {
   onClose: () => void;
   onAddMedication: (medication: Omit<Medication, 'id'>) => void;
   userMedications: UserMedication[];
+  customTimestamp?: Date; // Optional: for late entries
 }
 
-const MedicationLogModal: React.FC<MedicationLogModalProps> = ({ isOpen, onClose, onAddMedication, userMedications }) => {
+const MedicationLogModal: React.FC<MedicationLogModalProps> = ({ isOpen, onClose, onAddMedication, userMedications, customTimestamp }) => {
   // Manual mode only - voice removed because medication names are too long to say accurately
   const [selectedMedId, setSelectedMedId] = useState<string>('');
   const [quantity, setQuantity] = useState(1);
@@ -50,7 +51,7 @@ const MedicationLogModal: React.FC<MedicationLogModalProps> = ({ isOpen, onClose
         dosage: selectedMed.dosage,
         unit: selectedMed.unit,
         quantity,
-        timestamp: new Date().toISOString(),
+        timestamp: (customTimestamp || new Date()).toISOString(),
         source: 'manual',
     });
     onClose();

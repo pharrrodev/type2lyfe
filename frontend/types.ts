@@ -43,7 +43,6 @@ export interface FoodItem {
 export interface Meal {
   id: string;
   timestamp: string; // ISO string
-  photoUrl?: string;
   foodItems: FoodItem[];
   totalNutrition: {
     calories: number;

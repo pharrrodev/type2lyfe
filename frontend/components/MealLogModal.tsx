@@ -11,9 +11,10 @@ interface MealLogModalProps {
   onAddMeal: (meal: Omit<Meal, 'id'>) => Meal;
   onAddReading: (reading: Omit<GlucoseReading, 'id'>) => void;
   unit: 'mg/dL' | 'mmol/L';
+  customTimestamp?: Date; // Optional: for late entries
 }
 
-const MealLogModal: React.FC<MealLogModalProps> = ({ isOpen, onClose, onAddMeal, onAddReading, unit }) => {
+const MealLogModal: React.FC<MealLogModalProps> = ({ isOpen, onClose, onAddMeal, onAddReading, unit, customTimestamp }) => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<{ items: FoodItem[], total: { calories: number; protein: number; carbs: number; fat: number; sugar: number } } | null>(null);
@@ -80,12 +81,12 @@ const MealLogModal: React.FC<MealLogModalProps> = ({ isOpen, onClose, onAddMeal,
 
   const handleSubmit = () => {
     if (!analysisResult) return;
-    
-    const mealTimestamp = new Date();
 
+    const mealTimestamp = customTimestamp || new Date();
+
+    // Photo is used only for analysis, not stored in database
     const newMeal = onAddMeal({
       timestamp: mealTimestamp.toISOString(),
-      photoUrl: previewUrl || undefined,
       foodItems: analysisResult?.items || [],
       totalNutrition: analysisResult?.total || { calories: 0, protein: 0, carbs: 0, fat: 0, sugar: 0 },
       mealType: getMealType(mealTimestamp),
