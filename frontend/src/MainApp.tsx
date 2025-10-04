@@ -17,6 +17,8 @@ import { PlusIcon } from '../components/Icons';
 import WeightLogModal from '../components/WeightLogModal';
 import BloodPressureLogModal from '../components/BloodPressureLogModal';
 import ActionBottomSheet from '../components/ActionBottomSheet';
+import ToastContainer from '../components/ToastContainer';
+import { useToast } from '../hooks/useToast';
 
 export type Page = 'dashboard' | 'activity' | 'history' | 'settings';
 
@@ -40,6 +42,9 @@ const MainApp: React.FC = () => {
   const [glucoseUnit, setGlucoseUnit] = useState<'mg/dL' | 'mmol/L'>('mmol/L');
   const [weightUnit, setWeightUnit] = useState<'kg' | 'lbs'>('kg');
   const [activePage, setActivePage] = useState<Page>('dashboard');
+
+  // Toast notifications
+  const { toasts, removeToast, success, error, info } = useToast();
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -90,11 +95,13 @@ const MainApp: React.FC = () => {
         return updated;
       });
       console.log('✅ addGlucoseReading completed successfully');
+      success('Glucose reading logged successfully! 🩸');
     } catch (error) {
       console.error('❌ Failed to add glucose reading:', error);
+      error('Failed to log glucose reading. Please try again.');
       throw error; // Re-throw to let the modal handle the error
     }
-  }, []);
+  }, [success, error]);
 
   const addMeal = useCallback(async (meal: Omit<Meal, 'id'>) => {
     try {
@@ -106,12 +113,14 @@ const MainApp: React.FC = () => {
         console.log('📊 Updated meals count:', updated.length);
         return updated;
       });
+      success('Meal logged successfully! 🍽️');
       return response.data;
-    } catch (error) {
-      console.error('❌ Failed to add meal:', error);
+    } catch (err) {
+      console.error('❌ Failed to add meal:', err);
+      error('Failed to log meal. Please try again.');
       return null;
     }
-  }, []);
+  }, [success, error]);
 
   const addMedication = useCallback(async (medication: Omit<Medication, 'id'>) => {
     try {
@@ -126,52 +135,63 @@ const MainApp: React.FC = () => {
         return updated;
       });
       console.log('✅ addMedication completed successfully');
-    } catch (error) {
-      console.error('❌ Failed to add medication:', error);
-      throw error; // Re-throw to let the modal handle the error
+      success('Medication logged successfully! 💊');
+    } catch (err) {
+      console.error('❌ Failed to add medication:', err);
+      error('Failed to log medication. Please try again.');
+      throw err; // Re-throw to let the modal handle the error
     }
-  }, []);
+  }, [success, error]);
 
   const addWeightReading = useCallback(async (reading: Omit<WeightReading, 'id'>) => {
     try {
       const response = await api.post('/logs/weight', reading);
       setWeightReadings(prev => [...prev, response.data].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
-    } catch (error) {
-      console.error('Failed to add weight reading:', error);
+      success('Weight logged successfully! ⚖️');
+    } catch (err) {
+      console.error('Failed to add weight reading:', err);
+      error('Failed to log weight. Please try again.');
     }
-  }, []);
+  }, [success, error]);
 
   const addBloodPressureReading = useCallback(async (reading: Omit<BloodPressureReading, 'id'>) => {
     try {
       const response = await api.post('/logs/blood-pressure', reading);
       setBloodPressureReadings(prev => [...prev, response.data].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
-    } catch (error) {
-      console.error('Failed to add blood pressure reading:', error);
+      success('Blood pressure logged successfully! 🫀');
+    } catch (err) {
+      console.error('Failed to add blood pressure reading:', err);
+      error('Failed to log blood pressure. Please try again.');
     }
-  }, []);
+  }, [success, error]);
 
   const saveUserMedication = useCallback(async (med: Omit<UserMedication, 'id'> & { id?: string }) => {
     try {
       if (med.id) {
         const response = await api.put(`/medications/${med.id}`, med);
         setUserMedications(prev => prev.map(m => m.id === med.id ? response.data : m));
+        success('Medication updated successfully!');
       } else {
         const response = await api.post('/medications', med);
         setUserMedications(prev => [...prev, response.data]);
+        success('Medication added successfully!');
       }
-    } catch (error) {
-      console.error('Failed to save user medication:', error);
+    } catch (err) {
+      console.error('Failed to save user medication:', err);
+      error('Failed to save medication. Please try again.');
     }
-  }, []);
+  }, [success, error]);
 
   const deleteUserMedication = useCallback(async (id: string) => {
     try {
       await api.delete(`/medications/${id}`);
       setUserMedications(prev => prev.filter(m => m.id !== id));
-    } catch (error) {
-      console.error('Failed to delete user medication:', error);
+      success('Medication deleted successfully!');
+    } catch (err) {
+      console.error('Failed to delete user medication:', err);
+      error('Failed to delete medication. Please try again.');
     }
-  }, []);
+  }, [success, error]);
 
 
   const combinedLogs: LogEntryType[] = useMemo(() => {
@@ -302,6 +322,9 @@ const MainApp: React.FC = () => {
         onSave={saveUserMedication}
         onDelete={deleteUserMedication}
       />
+
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toasts} onClose={removeToast} />
     </div>
   );
 };
