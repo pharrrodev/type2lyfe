@@ -83,7 +83,7 @@ This document tracks the implementation of the new Design System v2.0 for the Ty
 
 ## 🔄 Migration Status
 
-### Components Updated (16/30)
+### Components Updated (22/30)
 
 ✅ **Completed:**
 1. StatsGrid.tsx
@@ -102,6 +102,15 @@ This document tracks the implementation of the new Design System v2.0 for the Ty
 14. SettingsPage.tsx
 15. LogTypeSelector.tsx
 16. NutritionDisplay.tsx
+17. BottomNavBar.tsx
+18. ActionBottomSheet.tsx
+19. Footer.tsx
+20. LogEntry.tsx
+21. GlucoseChart.tsx
+22. Utility components (Spinner, DarkModeToggle, Type2LifestylesLogo, Icons - no changes needed)
+
+⏸️ **Deferred:**
+- LateEntryForm.tsx (large component - 1427 lines, not actively used in current app flow)
 
 ⏳ **Pending:**
 1. Dashboard.tsx
@@ -163,22 +172,22 @@ Update main page components:
 - Update button styles
 - Ensure consistent spacing
 
-### Phase 4: Form Components (Priority: Medium)
+### Phase 4: Form Components (Priority: Medium) ⏳ IN PROGRESS
 Update form-heavy components:
-- [ ] LateEntryForm.tsx (large component, needs careful migration)
-- [ ] LogTypeSelector.tsx
-- [ ] NutritionDisplay.tsx
+- [ ] LateEntryForm.tsx (large component, needs careful migration - DEFERRED)
+- [x] LogTypeSelector.tsx
+- [x] NutritionDisplay.tsx
 
 **Key Changes:**
 - Replace input styles with new TextInput component or tokens
 - Update button styles
 - Update validation error colors to use `danger` token
 
-### Phase 5: Navigation & Layout (Priority: Medium)
+### Phase 5: Navigation & Layout (Priority: Medium) ✅ COMPLETE
 Update navigation and layout components:
-- [ ] BottomNavBar.tsx
-- [ ] ActionBottomSheet.tsx
-- [ ] Footer.tsx
+- [x] BottomNavBar.tsx
+- [x] ActionBottomSheet.tsx
+- [x] Footer.tsx
 
 **Key Changes:**
 - Update active state colors from green to teal

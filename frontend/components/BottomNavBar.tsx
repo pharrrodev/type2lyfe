@@ -20,8 +20,8 @@ const NavButton: React.FC<{
             onClick={onClick}
             className={`flex flex-col items-center justify-center w-full pt-3 pb-2 transition-all duration-300 ${
                 isActive
-                    ? 'text-primary dark:text-primary-light'
-                    : 'text-text-secondary dark:text-slate-400 hover:text-primary dark:hover:text-primary-light'
+                    ? 'text-primary dark:text-primary'
+                    : 'text-text-secondary dark:text-slate-400 hover:text-primary dark:hover:text-primary'
             }`}
         >
             {icon}
@@ -33,7 +33,7 @@ const NavButton: React.FC<{
 
 const BottomNavBar: React.FC<BottomNavBarProps> = ({ activePage, onNavigate }) => {
     return (
-        <nav className="flex-shrink-0 bg-white dark:bg-slate-800 border-t border-border-light dark:border-slate-700">
+        <nav className="flex-shrink-0 bg-card dark:bg-slate-800 border-t border-border dark:border-slate-700">
             <div className="container mx-auto flex justify-around">
                 <NavButton
                     page="dashboard"

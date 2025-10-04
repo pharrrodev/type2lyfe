@@ -19,7 +19,7 @@ const GlucoseChart: React.FC<GlucoseChartProps> = ({ data, unit }) => {
     if (active && payload && payload.length) {
       const dataPoint = payload[0].payload;
       return (
-        <div className="bg-white p-4 rounded-card shadow-card-hover border border-primary/30">
+        <div className="bg-card p-4 rounded-2xl shadow-card-hover border border-primary/30">
           <p className="font-semibold text-text-primary text-base">{`${dataPoint.value} ${unit}`}</p>
           <p className="text-sm text-text-secondary mt-1">{new Date(label).toLocaleString()}</p>
           <p className="text-sm text-text-secondary capitalize">{dataPoint.context.replace('_', ' ')}</p>
