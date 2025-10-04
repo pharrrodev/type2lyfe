@@ -1,6 +1,6 @@
-# Type2Lifestyles - Technical Report
+# Type2Lyfe - Technical Report
 
-**Project Name:** Type2Lifestyles  
+**Project Name:** Type2Lyfe
 **Version:** 1.0.0  
 **Date:** January 4, 2025  
 **Status:** Production Ready ✅  
@@ -10,7 +10,7 @@
 
 ## 📋 Executive Summary
 
-Type2Lifestyles is a full-stack health tracking web application designed for people managing Type 2 diabetes. The application provides comprehensive health monitoring capabilities including glucose tracking, weight monitoring, blood pressure logging, meal tracking, and medication management with AI-powered features.
+Type2Lyfe is a full-stack health tracking web application designed for people managing Type 2 diabetes. The application provides comprehensive health monitoring capabilities including glucose tracking, weight monitoring, blood pressure logging, meal tracking, and medication management with AI-powered features.
 
 **Key Achievements:**
 - ✅ Full-stack application with React frontend and Node.js backend

@@ -21,7 +21,7 @@ const Dashboard: React.FC<DashboardProps> = ({ glucoseReadings, weightReadings, 
           <DropletIcon className="w-16 h-16 text-primary dark:text-primary" />
         </div>
         <h2 className="text-2xl font-bold text-text-primary dark:text-slate-100 mb-3">
-          Welcome to Type2Lifestyles!
+          Welcome to Type2Lyfe!
         </h2>
         <p className="text-text-secondary dark:text-slate-400 mb-6 max-w-md">
           Start tracking your health journey by logging your first entry. Tap the <PlusIcon className="w-4 h-4 inline mx-1" /> button below to get started.

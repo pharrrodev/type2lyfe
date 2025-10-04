@@ -1,4 +1,4 @@
-# Type2Lifestyles Design System
+# Type2Lyfe Design System
 
 **Version:** 2.0  
 **Last Updated:** January 4, 2025  
@@ -8,7 +8,7 @@
 
 ## 🎨 Overview
 
-This design system provides a comprehensive set of design tokens, components, and guidelines for the Type2Lifestyles web application. It ensures consistency, accessibility, and a modern user experience across all features.
+This design system provides a comprehensive set of design tokens, components, and guidelines for the Type2Lyfe web application. It ensures consistency, accessibility, and a modern user experience across all features.
 
 ---
 
@@ -409,7 +409,7 @@ ease-out        /* Deceleration */
 ---
 
 **Design System Version:** 2.0  
-**Maintained by:** Type2Lifestyles Development Team  
+**Maintained by:** Type2Lyfe Development Team
 **Last Review:** January 4, 2025
 
 

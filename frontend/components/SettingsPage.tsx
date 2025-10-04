@@ -152,7 +152,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ glucoseUnit, onGlucoseUnitC
 
         {/* App Info */}
         <div className="mt-8 text-center text-text-secondary dark:text-slate-500 text-sm">
-          <p>Type2Lifestyles v1.0.0</p>
+          <p>Type2Lyfe v1.0.0</p>
           <p className="mt-1">Health tracking made simple</p>
         </div>
       </div>

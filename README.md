@@ -1,4 +1,4 @@
-# 🩺 Type2Lifestyles
+# 🩺 Type2Lyfe
 
 > AI-powered health tracking application for people with Type 2 diabetes
 
@@ -11,7 +11,7 @@
 
 ## 📖 **About**
 
-Type2Lifestyles is a comprehensive health tracking web application designed specifically for people managing Type 2 diabetes. The app provides an intuitive interface for logging glucose readings, weight, blood pressure, meals, and medications with AI-powered insights.
+Type2Lyfe is a comprehensive health tracking web application designed specifically for people managing Type 2 diabetes. The app provides an intuitive interface for logging glucose readings, weight, blood pressure, meals, and medications with AI-powered insights.
 
 ### ✨ **Key Features**
 
@@ -41,7 +41,7 @@ Type2Lifestyles is a comprehensive health tracking web application designed spec
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/type2lifestyles.git
+   git clone https://github.com/pharrrodev/type2lifestyles.git
    cd type2lifestyles
    ```
 
@@ -248,7 +248,7 @@ For support, please open an issue in the GitHub repository or contact the mainta
 
 ## ⚠️ **Disclaimer**
 
-Type2Lifestyles is a tracking tool and does not provide medical advice. Always consult your healthcare provider for medical decisions. This application is not a substitute for professional medical advice, diagnosis, or treatment.
+Type2Lyfe is a tracking tool and does not provide medical advice. Always consult your healthcare provider for medical decisions. This application is not a substitute for professional medical advice, diagnosis, or treatment.
 
 ---
 
