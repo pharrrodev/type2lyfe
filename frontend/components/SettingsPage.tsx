@@ -6,10 +6,12 @@ import { DropletIcon, WeightScaleIcon, XIcon, PillIcon } from './Icons';
 interface SettingsPageProps {
   glucoseUnit: 'mg/dL' | 'mmol/L';
   onGlucoseUnitChange: (unit: 'mg/dL' | 'mmol/L') => void;
+  weightUnit: 'kg' | 'lbs';
+  onWeightUnitChange: (unit: 'kg' | 'lbs') => void;
   onOpenMyMedications?: () => void;
 }
 
-const SettingsPage: React.FC<SettingsPageProps> = ({ glucoseUnit, onGlucoseUnitChange, onOpenMyMedications }) => {
+const SettingsPage: React.FC<SettingsPageProps> = ({ glucoseUnit, onGlucoseUnitChange, weightUnit, onWeightUnitChange, onOpenMyMedications }) => {
   const navigate = useNavigate();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
@@ -71,27 +73,35 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ glucoseUnit, onGlucoseUnitC
             </div>
           </div>
 
-          {/* Weight Unit - Future feature */}
-          <div className="flex items-center justify-between py-4 opacity-50">
+          {/* Weight Unit */}
+          <div className="flex items-center justify-between py-4">
             <div className="flex items-center">
               <WeightScaleIcon className="w-5 h-5 text-accent-orange dark:text-primary-light mr-3" />
               <div>
                 <h3 className="font-medium text-text-primary dark:text-slate-100">Weight Unit</h3>
-                <p className="text-sm text-text-secondary dark:text-slate-400">Coming soon</p>
+                <p className="text-sm text-text-secondary dark:text-slate-400">Choose your preferred unit</p>
               </div>
             </div>
             <div className="flex gap-2">
               <button
                 type="button"
-                disabled
-                className="px-4 py-2 rounded-button font-medium bg-white dark:bg-slate-700 text-text-secondary dark:text-slate-400 border border-border-light dark:border-slate-600 cursor-not-allowed"
+                onClick={() => onWeightUnitChange('kg')}
+                className={`px-4 py-2 rounded-button font-medium transition-all duration-300 ${
+                  weightUnit === 'kg'
+                    ? 'bg-primary dark:bg-primary-light text-white'
+                    : 'bg-white dark:bg-slate-700 text-text-secondary dark:text-slate-400 border border-border-light dark:border-slate-600 hover:border-primary dark:hover:border-primary-light'
+                }`}
               >
                 kg
               </button>
               <button
                 type="button"
-                disabled
-                className="px-4 py-2 rounded-button font-medium bg-white dark:bg-slate-700 text-text-secondary dark:text-slate-400 border border-border-light dark:border-slate-600 cursor-not-allowed"
+                onClick={() => onWeightUnitChange('lbs')}
+                className={`px-4 py-2 rounded-button font-medium transition-all duration-300 ${
+                  weightUnit === 'lbs'
+                    ? 'bg-primary dark:bg-primary-light text-white'
+                    : 'bg-white dark:bg-slate-700 text-text-secondary dark:text-slate-400 border border-border-light dark:border-slate-600 hover:border-primary dark:hover:border-primary-light'
+                }`}
               >
                 lbs
               </button>

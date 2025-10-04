@@ -38,6 +38,7 @@ const MainApp: React.FC = () => {
   const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
 
   const [glucoseUnit, setGlucoseUnit] = useState<'mg/dL' | 'mmol/L'>('mmol/L');
+  const [weightUnit, setWeightUnit] = useState<'kg' | 'lbs'>('kg');
   const [activePage, setActivePage] = useState<Page>('dashboard');
 
   useEffect(() => {
@@ -82,16 +83,9 @@ const MainApp: React.FC = () => {
       const response = await api.post('/logs/glucose', reading);
       console.log('✅ Glucose reading added:', response.data);
 
-      // Flatten the response data to match the GET endpoint structure
-      const flattenedReading = {
-        id: response.data.id,
-        timestamp: response.data.timestamp,
-        ...response.data.data
-      };
-      console.log('🔧 Flattened reading for state:', flattenedReading);
-
+      // Backend already returns flattened data: { id, timestamp, value, context, ... }
       setGlucoseReadings(prev => {
-        const updated = [...prev, flattenedReading].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        const updated = [...prev, response.data].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
         console.log('📊 Updated glucose readings count:', updated.length);
         return updated;
       });
@@ -125,16 +119,9 @@ const MainApp: React.FC = () => {
       const response = await api.post('/logs/medications', medication);
       console.log('✅ Medication added:', response.data);
 
-      // Handle data structure similar to glucose readings
-      const flattenedMedication = {
-        id: response.data.id,
-        timestamp: response.data.timestamp,
-        ...response.data.data
-      };
-      console.log('🔧 Flattened medication for state:', flattenedMedication);
-
+      // Backend already returns flattened data: { id, timestamp, name, dosage, ... }
       setMedications(prev => {
-        const updated = [...prev, flattenedMedication].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        const updated = [...prev, response.data].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
         console.log('📊 Updated medications count:', updated.length);
         return updated;
       });
@@ -222,6 +209,8 @@ const MainApp: React.FC = () => {
         return <SettingsPage
                     glucoseUnit={glucoseUnit}
                     onGlucoseUnitChange={setGlucoseUnit}
+                    weightUnit={weightUnit}
+                    onWeightUnitChange={setWeightUnit}
                     onOpenMyMedications={() => setIsMyMedicationsModalOpen(true)}
                 />;
       default:
