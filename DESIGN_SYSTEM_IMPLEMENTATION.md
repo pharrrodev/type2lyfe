@@ -83,7 +83,7 @@ This document tracks the implementation of the new Design System v2.0 for the Ty
 
 ## 🔄 Migration Status
 
-### Components Updated (10/30)
+### Components Updated (14/30)
 
 ✅ **Completed:**
 1. StatsGrid.tsx
@@ -96,6 +96,10 @@ This document tracks the implementation of the new Design System v2.0 for the Ty
 8. BloodPressureLogModal.tsx
 9. MyMedicationsModal.tsx
 10. DateTimePickerModal.tsx
+11. Dashboard.tsx
+12. ActivityPage.tsx
+13. HistoryPage.tsx
+14. SettingsPage.tsx
 
 ⏳ **Pending:**
 1. Dashboard.tsx
@@ -144,12 +148,12 @@ Update all modal components to use new design system:
 - Update text colors to `text-text-primary` and `text-text-secondary`
 - Update primary color from green to teal
 
-### Phase 3: Page Components (Priority: High)
+### Phase 3: Page Components (Priority: High) ✅ COMPLETE
 Update main page components:
-- [ ] Dashboard.tsx
-- [ ] ActivityPage.tsx
-- [ ] HistoryPage.tsx
-- [ ] SettingsPage.tsx
+- [x] Dashboard.tsx
+- [x] ActivityPage.tsx
+- [x] HistoryPage.tsx
+- [x] SettingsPage.tsx
 
 **Key Changes:**
 - Update card backgrounds and borders

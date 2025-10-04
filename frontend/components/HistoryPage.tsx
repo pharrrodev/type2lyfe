@@ -60,7 +60,7 @@ const HistoryPage: React.FC<HistoryPageProps> = ({
                 </p>
                 <button
                     onClick={() => setIsDateTimeModalOpen(true)}
-                    className="bg-gradient-to-br from-primary to-primary-dark dark:from-primary-light dark:to-primary text-white font-semibold py-4 px-8 rounded-button hover:shadow-fab transition-all duration-300 flex items-center justify-center mx-auto"
+                    className="bg-gradient-to-br from-primary to-primary-dark dark:from-primary dark:to-primary text-white font-semibold py-4 px-8 rounded-lg hover:shadow-fab transition-all duration-300 flex items-center justify-center mx-auto"
                 >
                     <PlusIcon className="w-6 h-6 mr-2" />
                     Add Late Entry

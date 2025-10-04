@@ -28,7 +28,7 @@ const ActivityPage: React.FC<ActivityPageProps> = ({ logs }) => {
               type="button"
               onClick={goToPrevPage}
               disabled={currentPage === 1}
-              className="px-3 py-1 bg-white dark:bg-slate-800 border border-primary dark:border-primary-light rounded-button shadow-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary hover:text-white dark:hover:bg-primary-light transition-all duration-300 text-text-primary dark:text-slate-100"
+              className="px-3 py-1 bg-card dark:bg-slate-800 border border-primary dark:border-primary rounded-lg shadow-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary hover:text-white dark:hover:bg-primary transition-all duration-300 text-text-primary dark:text-slate-100"
             >
               Prev
             </button>
@@ -39,7 +39,7 @@ const ActivityPage: React.FC<ActivityPageProps> = ({ logs }) => {
               type="button"
               onClick={goToNextPage}
               disabled={currentPage === totalPages}
-              className="px-3 py-1 bg-white dark:bg-slate-800 border border-primary dark:border-primary-light rounded-button shadow-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary hover:text-white dark:hover:bg-primary-light transition-all duration-300 text-text-primary dark:text-slate-100"
+              className="px-3 py-1 bg-card dark:bg-slate-800 border border-primary dark:border-primary rounded-lg shadow-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary hover:text-white dark:hover:bg-primary transition-all duration-300 text-text-primary dark:text-slate-100"
             >
               Next
             </button>
@@ -52,9 +52,9 @@ const ActivityPage: React.FC<ActivityPageProps> = ({ logs }) => {
             <LogEntry key={`${log.type}-${log.id}`} log={log} />
           ))
         ) : (
-          <div className="text-center py-10 bg-white dark:bg-slate-800 rounded-card shadow-card h-full flex flex-col justify-center items-center border border-transparent dark:border-slate-700">
-            <div className="bg-primary/10 dark:bg-primary-light/10 rounded-full p-4 mb-4">
-              <PlusIcon className="w-8 h-8 text-primary dark:text-primary-light" />
+          <div className="text-center py-10 bg-card dark:bg-slate-800 rounded-2xl shadow-card h-full flex flex-col justify-center items-center border border-transparent dark:border-slate-700">
+            <div className="bg-primary/10 dark:bg-primary/10 rounded-full p-4 mb-4">
+              <PlusIcon className="w-8 h-8 text-primary dark:text-primary" />
             </div>
             <p className="text-lg font-semibold text-text-primary dark:text-slate-100 mb-2">No recent activity</p>
             <p className="text-text-secondary dark:text-slate-400 text-sm">Tap the <PlusIcon className="w-3 h-3 inline mx-1" /> button below to log your first entry.</p>
