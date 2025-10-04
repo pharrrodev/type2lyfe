@@ -370,7 +370,7 @@ const GlucoseLogModal: React.FC<GlucoseLogModalProps> = ({ isOpen, onClose, onAd
     <div className="min-h-[220px]">
         {voiceStep === 'say_reading' && (
             <div className="text-center py-4 flex flex-col items-center">
-                <p className="text-text-secondary mb-4">
+                <p className="text-text-secondary dark:text-slate-400 mb-4">
                     {isListening
                         ? 'Tap the icon below to stop recording.'
                         : 'Tap the mic and say your reading, like "7.8 after dinner".'}
@@ -378,22 +378,22 @@ const GlucoseLogModal: React.FC<GlucoseLogModalProps> = ({ isOpen, onClose, onAd
                 <button
                     onClick={handleToggleListen}
                     disabled={isLoading}
-                    className={`mx-auto w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 ${isListening ? 'bg-accent-pink text-white shadow-lg' : 'bg-gradient-to-br from-primary to-primary-dark text-white hover:shadow-fab'} disabled:bg-slate-300`}
+                    className={`mx-auto w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 ${isListening ? 'bg-danger dark:bg-danger text-white shadow-lg' : 'bg-gradient-to-br from-primary to-primary-dark text-white hover:shadow-fab'} disabled:bg-slate-300 dark:disabled:bg-slate-600`}
                 >
                     {isLoading ? <Spinner /> : (isListening ? <SquareIcon className="w-7 h-7" /> : <MicIcon className="w-8 h-8" />)}
                 </button>
-                <p className="text-text-primary mt-4 min-h-[48px] px-2">{transcript || (isListening ? <span className="text-text-secondary">Listening...</span> : '')}</p>
+                <p className="text-text-primary dark:text-slate-100 mt-4 min-h-[48px] px-2">{transcript || (isListening ? <span className="text-text-secondary dark:text-slate-400">Listening...</span> : '')}</p>
             </div>
         )}
         {voiceStep === 'confirm' && parsedData && (
-            <div className="mt-4 p-5 bg-primary/5 rounded-2xl border-2 border-primary/30">
+            <div className="mt-4 p-5 bg-primary/5 dark:bg-primary/10 rounded-2xl border-2 border-primary/30 dark:border-primary/40">
                 <div className="text-center">
-                    <p className="text-text-secondary font-medium">Is this correct?</p>
-                    <p className="text-2xl font-bold text-primary my-2">{parsedData.value} <span className="text-sm font-normal text-text-secondary">{unit}</span></p>
-                    <p className="text-text-secondary capitalize font-medium">{parsedData.context.replace('_', ' ')}</p>
+                    <p className="text-text-secondary dark:text-slate-400 font-medium">Is this correct?</p>
+                    <p className="text-2xl font-bold text-primary dark:text-primary my-2">{parsedData.value} <span className="text-sm font-normal text-text-secondary dark:text-slate-400">{unit}</span></p>
+                    <p className="text-text-secondary dark:text-slate-400 capitalize font-medium">{parsedData.context.replace('_', ' ')}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-3 mt-6">
-                    <button onClick={resetVoiceState} className="w-full bg-card border-2 border-primary/20 text-text-primary font-semibold py-3 rounded-lg hover:bg-primary/5 hover:border-primary transition-all duration-300 shadow-card">
+                    <button onClick={resetVoiceState} className="w-full bg-card dark:bg-slate-700 border-2 border-primary/20 dark:border-primary/30 text-text-primary dark:text-slate-100 font-semibold py-3 rounded-lg hover:bg-primary/5 dark:hover:bg-primary/10 hover:border-primary dark:hover:border-primary transition-all duration-300 shadow-card">
                         Start Over
                     </button>
                     <button onClick={handleVoiceSubmit} className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-lg hover:shadow-fab transition-all duration-300">
@@ -402,7 +402,7 @@ const GlucoseLogModal: React.FC<GlucoseLogModalProps> = ({ isOpen, onClose, onAd
                 </div>
             </div>
         )}
-        {error && <p className="text-red-500 text-center mt-4">{error}</p>}
+        {error && <p className="text-danger dark:text-danger text-center mt-4">{error}</p>}
     </div>
   );
 
@@ -410,7 +410,7 @@ const GlucoseLogModal: React.FC<GlucoseLogModalProps> = ({ isOpen, onClose, onAd
     <form onSubmit={handleManualSubmit} className="space-y-4 pt-4 min-h-[220px]">
         <div className="grid grid-cols-2 gap-4">
             <div>
-                <label htmlFor="glucose-value" className="block text-sm font-semibold text-text-primary mb-2">Value ({unit})</label>
+                <label htmlFor="glucose-value" className="block text-sm font-semibold text-text-primary dark:text-slate-100 mb-2">Value ({unit})</label>
                 <input
                     type="number"
                     id="glucose-value"
@@ -418,16 +418,16 @@ const GlucoseLogModal: React.FC<GlucoseLogModalProps> = ({ isOpen, onClose, onAd
                     onChange={e => setManualValue(e.target.value)}
                     step={unit === 'mmol/L' ? '0.1' : '1'}
                     required
-                    className="block w-full bg-card text-text-primary placeholder:text-text-secondary rounded-lg border-2 border-border shadow-sm focus:border-primary focus:bg-card focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300 p-3"
+                    className="block w-full bg-card dark:bg-slate-700 text-text-primary dark:text-slate-100 placeholder:text-text-secondary dark:placeholder:text-slate-500 rounded-lg border-2 border-border dark:border-slate-600 shadow-sm focus:border-primary dark:focus:border-primary focus:bg-card dark:focus:bg-slate-700 focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300 p-3"
                 />
             </div>
             <div>
-                <label htmlFor="glucose-context" className="block text-sm font-semibold text-text-primary mb-2">Context</label>
+                <label htmlFor="glucose-context" className="block text-sm font-semibold text-text-primary dark:text-slate-100 mb-2">Context</label>
                 <select
                     id="glucose-context"
                     value={manualContext}
                     onChange={e => setManualContext(e.target.value as GlucoseReading['context'])}
-                    className="block w-full bg-card text-text-primary border-2 border-border rounded-lg focus:outline-none focus:border-primary focus:bg-card focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300 px-3 py-3"
+                    className="block w-full bg-card dark:bg-slate-700 text-text-primary dark:text-slate-100 border-2 border-border dark:border-slate-600 rounded-lg focus:outline-none focus:border-primary dark:focus:border-primary focus:bg-card dark:focus:bg-slate-700 focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300 px-3 py-3"
                 >
                     <option value="random">Random</option>
                     <option value="fasting">Fasting</option>
@@ -437,7 +437,7 @@ const GlucoseLogModal: React.FC<GlucoseLogModalProps> = ({ isOpen, onClose, onAd
                 </select>
             </div>
         </div>
-        {error && <p className="text-danger text-sm text-center font-medium">{error}</p>}
+        {error && <p className="text-danger dark:text-danger text-sm text-center font-medium">{error}</p>}
         <button type="submit" className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-lg hover:shadow-fab transition-all duration-300">
             Save Log
         </button>
@@ -450,12 +450,12 @@ const GlucoseLogModal: React.FC<GlucoseLogModalProps> = ({ isOpen, onClose, onAd
             <div>
                 {!previewUrl ? (
                     <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <button onClick={() => { fileInputRef.current?.setAttribute('capture', 'environment'); fileInputRef.current?.click(); }} className="border-2 border-dashed border-primary/30 rounded-2xl p-8 text-center text-text-secondary hover:bg-primary/5 hover:border-primary transition-all duration-300 flex flex-col items-center justify-center">
-                            <CameraIcon className="w-10 h-10 mx-auto text-primary mb-2" />
+                        <button onClick={() => { fileInputRef.current?.setAttribute('capture', 'environment'); fileInputRef.current?.click(); }} className="border-2 border-dashed border-primary/30 dark:border-primary/40 rounded-2xl p-8 text-center text-text-secondary dark:text-slate-400 hover:bg-primary/5 dark:hover:bg-primary/10 hover:border-primary dark:hover:border-primary transition-all duration-300 flex flex-col items-center justify-center">
+                            <CameraIcon className="w-10 h-10 mx-auto text-primary dark:text-primary mb-2" />
                             <span className="font-medium">Take Picture</span>
                         </button>
-                        <button onClick={() => { fileInputRef.current?.removeAttribute('capture'); fileInputRef.current?.click(); }} className="border-2 border-dashed border-primary/30 rounded-2xl p-8 text-center text-text-secondary hover:bg-primary/5 hover:border-primary transition-all duration-300 flex flex-col items-center justify-center">
-                            <UploadIcon className="w-10 h-10 mx-auto text-primary mb-2" />
+                        <button onClick={() => { fileInputRef.current?.removeAttribute('capture'); fileInputRef.current?.click(); }} className="border-2 border-dashed border-primary/30 dark:border-primary/40 rounded-2xl p-8 text-center text-text-secondary dark:text-slate-400 hover:bg-primary/5 dark:hover:bg-primary/10 hover:border-primary dark:hover:border-primary transition-all duration-300 flex flex-col items-center justify-center">
+                            <UploadIcon className="w-10 h-10 mx-auto text-primary dark:text-primary mb-2" />
                             <span className="font-medium">Upload Photo</span>
                         </button>
                         <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
@@ -463,7 +463,7 @@ const GlucoseLogModal: React.FC<GlucoseLogModalProps> = ({ isOpen, onClose, onAd
                 ) : (
                     <div className="space-y-4">
                         <img src={previewUrl} alt="Glucose meter preview" className="rounded-2xl w-full max-h-48 object-contain shadow-card" />
-                        <button onClick={handlePhotoAnalyze} disabled={isLoading} className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-lg hover:shadow-fab disabled:bg-slate-300 disabled:from-slate-300 disabled:to-slate-300 transition-all duration-300 flex items-center justify-center">
+                        <button onClick={handlePhotoAnalyze} disabled={isLoading} className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-lg hover:shadow-fab disabled:bg-slate-300 dark:disabled:bg-slate-600 disabled:from-slate-300 disabled:to-slate-300 dark:disabled:from-slate-600 dark:disabled:to-slate-600 transition-all duration-300 flex items-center justify-center">
                             {isLoading ? <Spinner /> : 'Analyze Reading'}
                         </button>
                     </div>
@@ -471,14 +471,14 @@ const GlucoseLogModal: React.FC<GlucoseLogModalProps> = ({ isOpen, onClose, onAd
             </div>
         )}
         {photoStep === 'confirm' && parsedData && (
-             <div className="mt-4 p-5 bg-primary/5 rounded-2xl border-2 border-primary/30">
+             <div className="mt-4 p-5 bg-primary/5 dark:bg-primary/10 rounded-2xl border-2 border-primary/30 dark:border-primary/40">
                 <div className="text-center">
-                    <p className="text-text-secondary font-medium">Is this correct?</p>
-                    <p className="text-2xl font-bold text-primary my-2">{parsedData.value} <span className="text-sm font-normal text-text-secondary">{unit}</span></p>
-                    <p className="text-text-secondary capitalize font-medium">{parsedData.context.replace('_', ' ')}</p>
+                    <p className="text-text-secondary dark:text-slate-400 font-medium">Is this correct?</p>
+                    <p className="text-2xl font-bold text-primary dark:text-primary my-2">{parsedData.value} <span className="text-sm font-normal text-text-secondary dark:text-slate-400">{unit}</span></p>
+                    <p className="text-text-secondary dark:text-slate-400 capitalize font-medium">{parsedData.context.replace('_', ' ')}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-3 mt-6">
-                    <button onClick={resetPhotoState} className="w-full bg-card border-2 border-primary/20 text-text-primary font-semibold py-3 rounded-lg hover:bg-primary/5 hover:border-primary transition-all duration-300 shadow-card">
+                    <button onClick={resetPhotoState} className="w-full bg-card dark:bg-slate-700 border-2 border-primary/20 dark:border-primary/30 text-text-primary dark:text-slate-100 font-semibold py-3 rounded-lg hover:bg-primary/5 dark:hover:bg-primary/10 hover:border-primary dark:hover:border-primary transition-all duration-300 shadow-card">
                         Start Over
                     </button>
                     <button onClick={handlePhotoSubmit} className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-lg hover:shadow-fab transition-all duration-300">
@@ -487,32 +487,32 @@ const GlucoseLogModal: React.FC<GlucoseLogModalProps> = ({ isOpen, onClose, onAd
                 </div>
             </div>
         )}
-        {error && <p className="text-danger text-center mt-4 font-medium">{error}</p>}
+        {error && <p className="text-danger dark:text-danger text-center mt-4 font-medium">{error}</p>}
     </div>
   );
 
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-      <div className="bg-card rounded-3xl shadow-modal w-full max-w-md p-6 relative animate-fade-in-up">
-        <button onClick={onClose} className="absolute top-4 right-4 text-text-secondary hover:text-primary transition-all duration-300">
+    <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex justify-center items-center z-50 p-4">
+      <div className="bg-card dark:bg-slate-800 rounded-3xl shadow-modal w-full max-w-md p-6 relative animate-fade-in-up">
+        <button onClick={onClose} className="absolute top-4 right-4 text-text-secondary dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-all duration-300">
           <XIcon className="w-6 h-6" />
         </button>
         <div className="flex items-center space-x-3 mb-5">
-            <DropletIcon className="w-7 h-7 text-info" />
-            <h2 className="text-2xl font-bold text-text-primary">Log Glucose</h2>
+            <DropletIcon className="w-7 h-7 text-info dark:text-info" />
+            <h2 className="text-2xl font-bold text-text-primary dark:text-slate-100">Log Glucose</h2>
         </div>
 
-        <div className="flex border-b border-border mb-2">
-            <button onClick={() => { setActiveTab('voice'); resetManualState(); resetPhotoState(); }} className={`px-4 py-2 text-sm font-semibold flex items-center space-x-2 transition-all duration-300 ${activeTab === 'voice' ? 'border-b-2 border-primary text-primary' : 'text-text-secondary hover:text-primary'}`}>
+        <div className="flex border-b border-border dark:border-slate-700 mb-2">
+            <button onClick={() => { setActiveTab('voice'); resetManualState(); resetPhotoState(); }} className={`px-4 py-2 text-sm font-semibold flex items-center space-x-2 transition-all duration-300 ${activeTab === 'voice' ? 'border-b-2 border-primary text-primary dark:text-primary' : 'text-text-secondary dark:text-slate-400 hover:text-primary dark:hover:text-primary'}`}>
                 <MicIcon className="w-4 h-4" />
                 <span>Voice</span>
             </button>
-            <button onClick={() => { setActiveTab('manual'); resetVoiceState(); resetPhotoState(); }} className={`px-4 py-2 text-sm font-semibold flex items-center space-x-2 transition-all duration-300 ${activeTab === 'manual' ? 'border-b-2 border-primary text-primary' : 'text-text-secondary hover:text-primary'}`}>
+            <button onClick={() => { setActiveTab('manual'); resetVoiceState(); resetPhotoState(); }} className={`px-4 py-2 text-sm font-semibold flex items-center space-x-2 transition-all duration-300 ${activeTab === 'manual' ? 'border-b-2 border-primary text-primary dark:text-primary' : 'text-text-secondary dark:text-slate-400 hover:text-primary dark:hover:text-primary'}`}>
                 <PencilIcon className="w-4 h-4" />
                 <span>Manual</span>
             </button>
-            <button onClick={() => { setActiveTab('photo'); resetVoiceState(); resetManualState(); }} className={`px-4 py-2 text-sm font-semibold flex items-center space-x-2 transition-all duration-300 ${activeTab === 'photo' ? 'border-b-2 border-primary text-primary' : 'text-text-secondary hover:text-primary'}`}>
+            <button onClick={() => { setActiveTab('photo'); resetVoiceState(); resetManualState(); }} className={`px-4 py-2 text-sm font-semibold flex items-center space-x-2 transition-all duration-300 ${activeTab === 'photo' ? 'border-b-2 border-primary text-primary dark:text-primary' : 'text-text-secondary dark:text-slate-400 hover:text-primary dark:hover:text-primary'}`}>
                 <CameraIcon className="w-4 h-4" />
                 <span>Photo</span>
             </button>
