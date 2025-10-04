@@ -30,53 +30,53 @@ const StatsGrid: React.FC<StatsGridProps> = ({ readings, weightReadings, bloodPr
     return (
         <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {/* Latest Glucose Card */}
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-card shadow-card hover:shadow-card-hover transition-all duration-300 text-center border border-border-light dark:border-slate-700">
-                <p className="text-sm font-normal text-text-secondary dark:text-slate-400 mb-3">Latest Glucose</p>
+            <div className="bg-card dark:bg-slate-800 p-6 rounded-2xl shadow-card hover:shadow-card-hover transition-all duration-300 text-center border border-border dark:border-slate-700">
+                <p className="text-xs text-text-secondary dark:text-slate-400 mb-3">Latest Glucose</p>
                 {latestGlucose ? (
-                    <p className="text-4xl font-bold text-accent-blue dark:text-accent-blue-light">
+                    <p className="text-2xl font-bold text-primary dark:text-primary">
                         {latestGlucose.value}
-                        <span className="text-base font-normal text-text-secondary dark:text-slate-400 ml-1">{unit}</span>
+                        <span className="text-sm font-normal text-text-secondary dark:text-slate-400 ml-1">{unit}</span>
                     </p>
                 ) : (
-                    <p className="text-4xl font-bold text-text-light dark:text-slate-600">-</p>
+                    <p className="text-2xl font-bold text-text-secondary dark:text-slate-600">-</p>
                 )}
             </div>
 
             {/* 24h Average Card */}
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-card shadow-card hover:shadow-card-hover transition-all duration-300 text-center border border-border-light dark:border-slate-700">
-                <p className="text-sm font-normal text-text-secondary dark:text-slate-400 mb-3">24h Average</p>
+            <div className="bg-card dark:bg-slate-800 p-6 rounded-2xl shadow-card hover:shadow-card-hover transition-all duration-300 text-center border border-border dark:border-slate-700">
+                <p className="text-xs text-text-secondary dark:text-slate-400 mb-3">24h Average</p>
                 {average ? (
-                    <p className="text-4xl font-bold text-accent-blue dark:text-accent-blue-light">
+                    <p className="text-2xl font-bold text-primary dark:text-primary">
                         {average}
-                        <span className="text-base font-normal text-text-secondary dark:text-slate-400 ml-1">{unit}</span>
+                        <span className="text-sm font-normal text-text-secondary dark:text-slate-400 ml-1">{unit}</span>
                     </p>
                 ) : (
-                    <p className="text-4xl font-bold text-text-light dark:text-slate-600">-</p>
+                    <p className="text-2xl font-bold text-text-secondary dark:text-slate-600">-</p>
                 )}
             </div>
 
             {/* Latest Weight Card */}
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-card shadow-card hover:shadow-card-hover transition-all duration-300 text-center border border-border-light dark:border-slate-700">
-                <p className="text-sm font-normal text-text-secondary dark:text-slate-400 mb-3">Latest Weight</p>
+            <div className="bg-card dark:bg-slate-800 p-6 rounded-2xl shadow-card hover:shadow-card-hover transition-all duration-300 text-center border border-border dark:border-slate-700">
+                <p className="text-xs text-text-secondary dark:text-slate-400 mb-3">Latest Weight</p>
                 {latestWeight ? (
-                    <p className="text-4xl font-bold text-accent-blue dark:text-accent-blue-light">
+                    <p className="text-2xl font-bold text-primary dark:text-primary">
                         {latestWeight.value}
-                        <span className="text-base font-normal text-text-secondary dark:text-slate-400 ml-1">{latestWeight.unit}</span>
+                        <span className="text-sm font-normal text-text-secondary dark:text-slate-400 ml-1">{latestWeight.unit}</span>
                     </p>
                 ) : (
-                    <p className="text-4xl font-bold text-text-light dark:text-slate-600">-</p>
+                    <p className="text-2xl font-bold text-text-secondary dark:text-slate-600">-</p>
                 )}
             </div>
 
             {/* Latest Blood Pressure Card */}
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-card shadow-card hover:shadow-card-hover transition-all duration-300 text-center border border-border-light dark:border-slate-700">
-                <p className="text-sm font-normal text-text-secondary dark:text-slate-400 mb-3">Latest BP</p>
+            <div className="bg-card dark:bg-slate-800 p-6 rounded-2xl shadow-card hover:shadow-card-hover transition-all duration-300 text-center border border-border dark:border-slate-700">
+                <p className="text-xs text-text-secondary dark:text-slate-400 mb-3">Latest BP</p>
                 {latestBP ? (
-                    <p className="text-4xl font-bold text-accent-blue dark:text-accent-blue-light">
+                    <p className="text-2xl font-bold text-primary dark:text-primary">
                         {latestBP.systolic}/{latestBP.diastolic}
                     </p>
                 ) : (
-                    <p className="text-4xl font-bold text-text-light dark:text-slate-600">-</p>
+                    <p className="text-2xl font-bold text-text-secondary dark:text-slate-600">-</p>
                 )}
             </div>
         </section>
