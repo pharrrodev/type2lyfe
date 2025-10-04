@@ -19,6 +19,7 @@ import BloodPressureLogModal from '../components/BloodPressureLogModal';
 import ActionBottomSheet from '../components/ActionBottomSheet';
 import ToastContainer from '../components/ToastContainer';
 import { useToast } from '../hooks/useToast';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 export type Page = 'dashboard' | 'activity' | 'history' | 'settings';
 
@@ -43,12 +44,16 @@ const MainApp: React.FC = () => {
   const [weightUnit, setWeightUnit] = useState<'kg' | 'lbs'>('kg');
   const [activePage, setActivePage] = useState<Page>('dashboard');
 
+  // Loading states
+  const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
+
   // Toast notifications
   const { toasts, removeToast, success, error, info } = useToast();
 
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
+        setIsLoadingInitialData(true);
         console.log('🔄 Fetching initial data...');
         const [glucoseRes, mealsRes, medicationsRes, weightRes, bloodPressureRes, userMedicationsRes] = await Promise.all([
           api.get('/logs/glucose'),
@@ -74,13 +79,16 @@ const MainApp: React.FC = () => {
         setWeightReadings(weightRes.data);
         setBloodPressureReadings(bloodPressureRes.data);
         setUserMedications(userMedicationsRes.data);
-      } catch (error) {
-        console.error('❌ Failed to fetch initial data:', error);
+      } catch (err) {
+        console.error('❌ Failed to fetch initial data:', err);
+        error('Failed to load data. Please refresh the page.');
+      } finally {
+        setIsLoadingInitialData(false);
       }
     };
 
     fetchInitialData();
-  }, []);
+  }, [error]);
 
   const addGlucoseReading = useCallback(async (reading: Omit<GlucoseReading, 'id'>) => {
     try {
@@ -243,7 +251,11 @@ const MainApp: React.FC = () => {
       <Header />
 
       <main className="flex-grow container mx-auto px-4 md:px-6 py-1.5 sm:py-4 overflow-hidden">
-        {renderContent()}
+        {isLoadingInitialData ? (
+          <LoadingSpinner size="xl" fullScreen message="Loading your health data..." />
+        ) : (
+          renderContent()
+        )}
       </main>
 
       <div className="fixed bottom-24 right-6">
