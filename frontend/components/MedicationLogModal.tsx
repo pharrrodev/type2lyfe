@@ -61,13 +61,13 @@ const MedicationLogModal: React.FC<MedicationLogModalProps> = ({ isOpen, onClose
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-modal shadow-modal w-full max-w-md">
-        <div className="flex items-center justify-between p-5 border-b border-slate-200">
+      <div className="bg-card rounded-3xl shadow-modal w-full max-w-md">
+        <div className="flex items-center justify-between p-5 border-b border-border">
           <div className="flex items-center gap-2">
             <PillIcon className="w-7 h-7 text-accent-purple" />
             <h2 className="text-2xl font-bold text-text-primary">Log Medication</h2>
           </div>
-          <button onClick={onClose} className="text-text-light hover:text-primary transition-all duration-300">
+          <button onClick={onClose} className="text-text-secondary hover:text-primary transition-all duration-300">
             <XIcon className="w-6 h-6" />
           </button>
         </div>
@@ -81,7 +81,7 @@ const MedicationLogModal: React.FC<MedicationLogModalProps> = ({ isOpen, onClose
               <select
                 value={selectedMedId}
                 onChange={(e) => setSelectedMedId(e.target.value)}
-                className="w-full bg-white text-text-primary rounded-button border-2 border-primary/20 focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300 px-3 py-3"
+                className="w-full bg-card text-text-primary rounded-lg border-2 border-border focus:border-primary focus:bg-card focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300 px-3 py-3"
               >
                 {userMedications.map((med) => (
                   <option key={med.id} value={med.id}>
@@ -111,17 +111,17 @@ const MedicationLogModal: React.FC<MedicationLogModalProps> = ({ isOpen, onClose
                   }
                 }}
                 onFocus={(e) => e.target.select()}
-                className="w-full bg-white text-text-primary rounded-button border-2 border-primary/20 focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300 px-3 py-3"
+                className="w-full bg-card text-text-primary rounded-lg border-2 border-border focus:border-primary focus:bg-card focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300 px-3 py-3"
               />
             </div>
 
             {error && (
-              <p className="text-accent-pink text-sm text-center font-medium">{error}</p>
+              <p className="text-danger text-sm text-center font-medium">{error}</p>
             )}
 
             <button
               type="submit"
-              className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300"
+              className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-lg hover:shadow-fab transition-all duration-300"
             >
               Save Medication
             </button>
