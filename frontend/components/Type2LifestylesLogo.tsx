@@ -17,8 +17,8 @@ const Type2LifestylesLogo: React.FC<Type2LifestylesLogoProps> = ({
     lg: iconOnly ? 'h-12' : 'h-16'
   };
 
-  // Using the actual Type2Lifestyles logo PNG with white background
-  const logoPath = '/type2lifestyles-logowithbackground.png';
+  // Using the new Type2Lifestyles logo PNG with no background
+  const logoPath = '/logo_no_background_main.png';
 
   if (iconOnly) {
     // For icon-only mode, we'll use the same logo but with smaller size
