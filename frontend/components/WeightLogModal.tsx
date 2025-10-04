@@ -333,17 +333,17 @@ const WeightLogModal: React.FC<WeightLogModalProps> = ({ isOpen, onClose, onAddR
   );
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-      <div className="bg-card rounded-3xl shadow-modal w-full max-w-md p-6 relative animate-fade-in-up">
-        <button onClick={onClose} className="absolute top-4 right-4 text-text-secondary hover:text-primary transition-all duration-300"><XIcon className="w-6 h-6" /></button>
+    <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex justify-center items-center z-50 p-4">
+      <div className="bg-card dark:bg-slate-800 rounded-3xl shadow-modal w-full max-w-md p-6 relative animate-fade-in-up">
+        <button onClick={onClose} className="absolute top-4 right-4 text-text-secondary dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-all duration-300"><XIcon className="w-6 h-6" /></button>
         <div className="flex items-center space-x-3 mb-5">
-          <WeightScaleIcon className="w-7 h-7 text-warning" />
-          <h2 className="text-2xl font-bold text-text-primary">Log Weight</h2>
+          <WeightScaleIcon className="w-7 h-7 text-warning dark:text-warning" />
+          <h2 className="text-2xl font-bold text-text-primary dark:text-slate-100">Log Weight</h2>
         </div>
-        <div className="flex border-b border-border mb-2">
-          <button onClick={() => { setActiveTab('voice'); resetManualState(); resetPhotoState(); }} className={`px-4 py-2 text-sm font-semibold flex items-center space-x-2 transition-all duration-300 ${activeTab === 'voice' ? 'border-b-2 border-primary text-primary' : 'text-text-secondary hover:text-primary'}`}><MicIcon className="w-4 h-4" /><span>Voice</span></button>
-          <button onClick={() => { setActiveTab('manual'); resetVoiceState(); resetPhotoState(); }} className={`px-4 py-2 text-sm font-semibold flex items-center space-x-2 transition-all duration-300 ${activeTab === 'manual' ? 'border-b-2 border-primary text-primary' : 'text-text-secondary hover:text-primary'}`}><PencilIcon className="w-4 h-4" /><span>Manual</span></button>
-          <button onClick={() => { setActiveTab('photo'); resetVoiceState(); resetManualState(); }} className={`px-4 py-2 text-sm font-semibold flex items-center space-x-2 transition-all duration-300 ${activeTab === 'photo' ? 'border-b-2 border-primary text-primary' : 'text-text-secondary hover:text-primary'}`}><CameraIcon className="w-4 h-4" /><span>Photo</span></button>
+        <div className="flex border-b border-border dark:border-slate-700 mb-2">
+          <button onClick={() => { setActiveTab('voice'); resetManualState(); resetPhotoState(); }} className={`px-4 py-2 text-sm font-semibold flex items-center space-x-2 transition-all duration-300 ${activeTab === 'voice' ? 'border-b-2 border-primary text-primary dark:text-primary' : 'text-text-secondary dark:text-slate-400 hover:text-primary dark:hover:text-primary'}`}><MicIcon className="w-4 h-4" /><span>Voice</span></button>
+          <button onClick={() => { setActiveTab('manual'); resetVoiceState(); resetPhotoState(); }} className={`px-4 py-2 text-sm font-semibold flex items-center space-x-2 transition-all duration-300 ${activeTab === 'manual' ? 'border-b-2 border-primary text-primary dark:text-primary' : 'text-text-secondary dark:text-slate-400 hover:text-primary dark:hover:text-primary'}`}><PencilIcon className="w-4 h-4" /><span>Manual</span></button>
+          <button onClick={() => { setActiveTab('photo'); resetVoiceState(); resetManualState(); }} className={`px-4 py-2 text-sm font-semibold flex items-center space-x-2 transition-all duration-300 ${activeTab === 'photo' ? 'border-b-2 border-primary text-primary dark:text-primary' : 'text-text-secondary dark:text-slate-400 hover:text-primary dark:hover:text-primary'}`}><CameraIcon className="w-4 h-4" /><span>Photo</span></button>
         </div>
         {activeTab === 'voice' && renderVoiceContent()}
         {activeTab === 'manual' && renderManualContent()}

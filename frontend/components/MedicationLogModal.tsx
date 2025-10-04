@@ -60,14 +60,14 @@ const MedicationLogModal: React.FC<MedicationLogModalProps> = ({ isOpen, onClose
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-card rounded-3xl shadow-modal w-full max-w-md">
-        <div className="flex items-center justify-between p-5 border-b border-border">
+    <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50 p-4">
+      <div className="bg-card dark:bg-slate-800 rounded-3xl shadow-modal w-full max-w-md">
+        <div className="flex items-center justify-between p-5 border-b border-border dark:border-slate-700">
           <div className="flex items-center gap-2">
-            <PillIcon className="w-7 h-7 text-accent-purple" />
-            <h2 className="text-2xl font-bold text-text-primary">Log Medication</h2>
+            <PillIcon className="w-7 h-7 text-accent-purple dark:text-accent-purple" />
+            <h2 className="text-2xl font-bold text-text-primary dark:text-slate-100">Log Medication</h2>
           </div>
-          <button onClick={onClose} className="text-text-secondary hover:text-primary transition-all duration-300">
+          <button onClick={onClose} className="text-text-secondary dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-all duration-300">
             <XIcon className="w-6 h-6" />
           </button>
         </div>
@@ -75,13 +75,13 @@ const MedicationLogModal: React.FC<MedicationLogModalProps> = ({ isOpen, onClose
         <div className="p-6">
           <form onSubmit={(e) => { e.preventDefault(); handleManualSubmit(); }} className="space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-text-primary mb-2">
+              <label className="block text-sm font-semibold text-text-primary dark:text-slate-100 mb-2">
                 Medication
               </label>
               <select
                 value={selectedMedId}
                 onChange={(e) => setSelectedMedId(e.target.value)}
-                className="w-full bg-card text-text-primary rounded-lg border-2 border-border focus:border-primary focus:bg-card focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300 px-3 py-3"
+                className="w-full bg-card dark:bg-slate-700 text-text-primary dark:text-slate-100 rounded-lg border-2 border-border dark:border-slate-600 focus:border-primary dark:focus:border-primary focus:bg-card dark:focus:bg-slate-700 focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300 px-3 py-3"
               >
                 {userMedications.map((med) => (
                   <option key={med.id} value={med.id}>
@@ -92,7 +92,7 @@ const MedicationLogModal: React.FC<MedicationLogModalProps> = ({ isOpen, onClose
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-text-primary mb-2">
+              <label className="block text-sm font-semibold text-text-primary dark:text-slate-100 mb-2">
                 Quantity
               </label>
               <input
@@ -111,12 +111,12 @@ const MedicationLogModal: React.FC<MedicationLogModalProps> = ({ isOpen, onClose
                   }
                 }}
                 onFocus={(e) => e.target.select()}
-                className="w-full bg-card text-text-primary rounded-lg border-2 border-border focus:border-primary focus:bg-card focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300 px-3 py-3"
+                className="w-full bg-card dark:bg-slate-700 text-text-primary dark:text-slate-100 rounded-lg border-2 border-border dark:border-slate-600 focus:border-primary dark:focus:border-primary focus:bg-card dark:focus:bg-slate-700 focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300 px-3 py-3"
               />
             </div>
 
             {error && (
-              <p className="text-danger text-sm text-center font-medium">{error}</p>
+              <p className="text-danger dark:text-danger text-sm text-center font-medium">{error}</p>
             )}
 
             <button

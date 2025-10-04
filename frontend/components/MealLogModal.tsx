@@ -121,27 +121,27 @@ const MealLogModal: React.FC<MealLogModalProps> = ({ isOpen, onClose, onAddMeal,
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-      <div className="bg-card rounded-3xl shadow-modal w-full max-w-lg p-6 relative animate-fade-in-up max-h-[90vh] overflow-y-auto">
-        <button onClick={onClose} className="absolute top-4 right-4 text-text-secondary hover:text-primary transition-all duration-300">
+    <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex justify-center items-center z-50 p-4">
+      <div className="bg-card dark:bg-slate-800 rounded-3xl shadow-modal w-full max-w-lg p-6 relative animate-fade-in-up max-h-[90vh] overflow-y-auto">
+        <button onClick={onClose} className="absolute top-4 right-4 text-text-secondary dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-all duration-300">
           <XIcon className="w-6 h-6" />
         </button>
-        <h2 className="text-2xl font-bold text-text-primary mb-5">Log Meal</h2>
+        <h2 className="text-2xl font-bold text-text-primary dark:text-slate-100 mb-5">Log Meal</h2>
 
         {!previewUrl ? (
           <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
             <button onClick={() => {
                 fileInputRef.current?.setAttribute('capture', 'environment');
                 fileInputRef.current?.click();
-            }} className="border-2 border-dashed border-primary/30 rounded-2xl p-8 text-center text-text-secondary hover:bg-primary/5 hover:border-primary transition-all duration-300 flex flex-col items-center justify-center">
-                <CameraIcon className="w-10 h-10 mx-auto text-primary mb-2" />
+            }} className="border-2 border-dashed border-primary/30 dark:border-primary/40 rounded-2xl p-8 text-center text-text-secondary dark:text-slate-400 hover:bg-primary/5 dark:hover:bg-primary/10 hover:border-primary dark:hover:border-primary transition-all duration-300 flex flex-col items-center justify-center">
+                <CameraIcon className="w-10 h-10 mx-auto text-primary dark:text-primary mb-2" />
                 <span>Take Picture</span>
             </button>
             <button onClick={() => {
                 fileInputRef.current?.removeAttribute('capture');
                 fileInputRef.current?.click();
-            }} className="border-2 border-dashed border-primary/30 rounded-2xl p-8 text-center text-text-secondary hover:bg-primary/5 hover:border-primary transition-all duration-300 flex flex-col items-center justify-center">
-                <UploadIcon className="w-10 h-10 mx-auto text-primary mb-2" />
+            }} className="border-2 border-dashed border-primary/30 dark:border-primary/40 rounded-2xl p-8 text-center text-text-secondary dark:text-slate-400 hover:bg-primary/5 dark:hover:bg-primary/10 hover:border-primary dark:hover:border-primary transition-all duration-300 flex flex-col items-center justify-center">
+                <UploadIcon className="w-10 h-10 mx-auto text-primary dark:text-primary mb-2" />
                 <span>Upload Photo</span>
             </button>
             <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
@@ -153,12 +153,12 @@ const MealLogModal: React.FC<MealLogModalProps> = ({ isOpen, onClose, onAddMeal,
         )}
 
         {previewUrl && !analysisResult && (
-          <button onClick={handleAnalyze} disabled={isLoading} className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-lg hover:shadow-fab disabled:bg-slate-300 disabled:from-slate-300 disabled:to-slate-300 transition-all duration-300 flex items-center justify-center">
+          <button onClick={handleAnalyze} disabled={isLoading} className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-lg hover:shadow-fab disabled:bg-slate-300 dark:disabled:bg-slate-600 disabled:from-slate-300 disabled:to-slate-300 dark:disabled:from-slate-600 dark:disabled:to-slate-600 transition-all duration-300 flex items-center justify-center">
             {isLoading ? <Spinner /> : 'Analyze Meal'}
           </button>
         )}
 
-        {error && <p className="text-danger mt-4 text-center">{error}</p>}
+        {error && <p className="text-danger dark:text-danger mt-4 text-center">{error}</p>}
 
         {analysisResult && (
           <div className="mt-4 space-y-4">
@@ -168,8 +168,8 @@ const MealLogModal: React.FC<MealLogModalProps> = ({ isOpen, onClose, onAddMeal,
             />
 
             <div className="flex items-center">
-              <input type="checkbox" id="log-glucose" checked={logPostMealGlucose} onChange={(e) => setLogPostMealGlucose(e.target.checked)} className="h-4 w-4 text-primary border-border rounded focus:ring-primary" />
-              <label htmlFor="log-glucose" className="ml-2 block text-sm text-text-secondary">Remind me to log post-meal glucose in 2 hours</label>
+              <input type="checkbox" id="log-glucose" checked={logPostMealGlucose} onChange={(e) => setLogPostMealGlucose(e.target.checked)} className="h-4 w-4 text-primary border-border dark:border-slate-600 rounded focus:ring-primary" />
+              <label htmlFor="log-glucose" className="ml-2 block text-sm text-text-secondary dark:text-slate-400">Remind me to log post-meal glucose in 2 hours</label>
             </div>
 
             <button onClick={handleSubmit} className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-lg hover:shadow-fab transition-all duration-300">
