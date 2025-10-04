@@ -83,7 +83,7 @@ This document tracks the implementation of the new Design System v2.0 for the Ty
 
 ## 🔄 Migration Status
 
-### Components Updated (14/30)
+### Components Updated (16/30)
 
 ✅ **Completed:**
 1. StatsGrid.tsx
@@ -100,6 +100,8 @@ This document tracks the implementation of the new Design System v2.0 for the Ty
 12. ActivityPage.tsx
 13. HistoryPage.tsx
 14. SettingsPage.tsx
+15. LogTypeSelector.tsx
+16. NutritionDisplay.tsx
 
 ⏳ **Pending:**
 1. Dashboard.tsx
