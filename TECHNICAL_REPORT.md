@@ -4,7 +4,7 @@
 **Version:** 1.0.0  
 **Date:** January 4, 2025  
 **Status:** Production Ready ✅  
-**Repository:** https://github.com/pharrrodev/type2lifestyles.git
+**Repository:** https://github.com/pharrrodev/type2lyfe.git
 
 ---
 
@@ -439,7 +439,7 @@ npm run dev  # Runs on port 3001
 ## 👥 Development Team Handoff
 
 ### Getting Started
-1. Clone repository: `git clone https://github.com/pharrrodev/type2lifestyles.git`
+1. Clone repository: `git clone https://github.com/pharrrodev/type2lyfe.git`
 2. Install dependencies (backend and frontend)
 3. Set up PostgreSQL database
 4. Configure environment variables
@@ -471,7 +471,7 @@ npm run dev  # Runs on port 3001
 
 ## 📞 Support & Contact
 
-**Repository:** https://github.com/pharrrodev/type2lifestyles.git  
+**Repository:** https://github.com/pharrrodev/type2lyfe.git
 **Issues:** Use GitHub Issues for bug reports and feature requests  
 **Documentation:** See README.md for quick start guide
 

@@ -41,8 +41,8 @@ Type2Lyfe is a comprehensive health tracking web application designed specifical
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/pharrrodev/type2lifestyles.git
-   cd type2lifestyles
+   git clone https://github.com/pharrrodev/type2lyfe.git
+   cd type2lyfe
    ```
 
 2. **Install backend dependencies**

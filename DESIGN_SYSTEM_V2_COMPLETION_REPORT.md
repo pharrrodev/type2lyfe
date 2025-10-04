@@ -7,7 +7,7 @@ The Design System v2.0 has been **successfully implemented** across the Type2Lyf
 **Implementation Date:** 2025-10-04  
 **Total Components Updated:** 22/30 (73% - effectively 100% of active components)  
 **Total Commits:** 5 commits  
-**GitHub Repository:** https://github.com/pharrrodev/type2lifestyles.git  
+**GitHub Repository:** https://github.com/pharrrodev/type2lyfe.git
 **Branch:** main
 
 ---
@@ -282,5 +282,5 @@ The application now has a professional, modern appearance with the new teal prim
 
 **Implementation completed by:** Augment Agent  
 **Date:** 2025-10-04  
-**Repository:** https://github.com/pharrrodev/type2lifestyles.git
+**Repository:** https://github.com/pharrrodev/type2lyfe.git
 
