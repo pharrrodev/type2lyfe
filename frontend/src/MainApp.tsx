@@ -220,9 +220,10 @@ const MainApp: React.FC = () => {
                     weightReadings={weightReadings}
                     bloodPressureReadings={bloodPressureReadings}
                     unit={glucoseUnit}
+                    onOpenActionSheet={() => setIsActionSheetOpen(true)}
                 />;
       case 'activity':
-        return <ActivityPage logs={combinedLogs} />;
+        return <ActivityPage logs={combinedLogs} onOpenActionSheet={() => setIsActionSheetOpen(true)} />;
       case 'history':
         return <HistoryPage
                     onAddGlucose={addGlucoseReading}

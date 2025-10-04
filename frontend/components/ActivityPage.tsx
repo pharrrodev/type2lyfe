@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { LogEntry as LogEntryType } from '../types';
 import LogEntry from './LogEntry';
-import { PlusIcon } from './Icons';
+import { PlusIcon, ActivityIcon } from './Icons';
+import EmptyState from './EmptyState';
 
 interface ActivityPageProps {
   logs: LogEntryType[];
+  onOpenActionSheet?: () => void;
 }
 
-const ActivityPage: React.FC<ActivityPageProps> = ({ logs }) => {
+const ActivityPage: React.FC<ActivityPageProps> = ({ logs, onOpenActionSheet }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
 
@@ -52,12 +54,20 @@ const ActivityPage: React.FC<ActivityPageProps> = ({ logs }) => {
             <LogEntry key={`${log.type}-${log.id}`} log={log} />
           ))
         ) : (
-          <div className="text-center py-10 bg-card dark:bg-slate-800 rounded-2xl shadow-card h-full flex flex-col justify-center items-center border border-transparent dark:border-slate-700">
-            <div className="bg-primary/10 dark:bg-primary/10 rounded-full p-4 mb-4">
-              <PlusIcon className="w-8 h-8 text-primary dark:text-primary" />
-            </div>
-            <p className="text-lg font-semibold text-text-primary dark:text-slate-100 mb-2">No recent activity</p>
-            <p className="text-text-secondary dark:text-slate-400 text-sm">Tap the <PlusIcon className="w-3 h-3 inline mx-1" /> button below to log your first entry.</p>
+          <div className="h-full">
+            <EmptyState
+              icon={<ActivityIcon className="w-12 h-12 text-primary dark:text-primary" />}
+              title="No Activity Yet"
+              description="Your recent health logs will appear here. Start tracking to see your progress over time."
+              action={
+                onOpenActionSheet
+                  ? {
+                      label: 'Log an Entry',
+                      onClick: onOpenActionSheet
+                    }
+                  : undefined
+              }
+            />
           </div>
         )}
       </div>

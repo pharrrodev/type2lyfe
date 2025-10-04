@@ -3,40 +3,75 @@ import { GlucoseReading, WeightReading, BloodPressureReading } from '../types';
 import GlucoseChart from './GlucoseChart';
 import StatsGrid from './StatsGrid';
 import { PlusIcon, DropletIcon } from './Icons';
+import EmptyState from './EmptyState';
 
 interface DashboardProps {
   glucoseReadings: GlucoseReading[];
   weightReadings: WeightReading[];
   bloodPressureReadings: BloodPressureReading[];
   unit: 'mg/dL' | 'mmol/L';
+  onOpenActionSheet?: () => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ glucoseReadings, weightReadings, bloodPressureReadings, unit }) => {
+const Dashboard: React.FC<DashboardProps> = ({ glucoseReadings, weightReadings, bloodPressureReadings, unit, onOpenActionSheet }) => {
   const hasAnyData = glucoseReadings.length > 0 || weightReadings.length > 0 || bloodPressureReadings.length > 0;
 
   if (!hasAnyData) {
     return (
-      <div className="h-full flex flex-col items-center justify-center p-6 text-center">
-        <div className="bg-primary/10 dark:bg-primary/10 rounded-full p-6 mb-6">
-          <DropletIcon className="w-16 h-16 text-primary dark:text-primary" />
+      <EmptyState
+        icon={<DropletIcon className="w-16 h-16 text-primary dark:text-primary" />}
+        title="Welcome to Type2Lyfe!"
+        description="Start your health journey by logging your first entry. Track glucose, meals, medications, weight, and blood pressure all in one place."
+        action={
+          onOpenActionSheet
+            ? {
+                label: 'Log Your First Entry',
+                onClick: onOpenActionSheet
+              }
+            : undefined
+        }
+      >
+        <div className="bg-card dark:bg-slate-800 p-6 rounded-2xl shadow-card border-2 border-border dark:border-slate-700 max-w-md mt-4">
+          <h3 className="font-semibold text-text-primary dark:text-slate-100 mb-4 text-lg">What you can track:</h3>
+          <div className="grid grid-cols-1 gap-3 text-left">
+            <div className="flex items-start space-x-3">
+              <span className="text-2xl">🩸</span>
+              <div>
+                <p className="font-medium text-text-primary dark:text-slate-100">Glucose Readings</p>
+                <p className="text-sm text-text-secondary dark:text-slate-400">Voice, manual, or photo input</p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-3">
+              <span className="text-2xl">🍽️</span>
+              <div>
+                <p className="font-medium text-text-primary dark:text-slate-100">Meals</p>
+                <p className="text-sm text-text-secondary dark:text-slate-400">AI-powered photo analysis</p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-3">
+              <span className="text-2xl">💊</span>
+              <div>
+                <p className="font-medium text-text-primary dark:text-slate-100">Medications</p>
+                <p className="text-sm text-text-secondary dark:text-slate-400">Track your daily doses</p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-3">
+              <span className="text-2xl">⚖️</span>
+              <div>
+                <p className="font-medium text-text-primary dark:text-slate-100">Weight</p>
+                <p className="text-sm text-text-secondary dark:text-slate-400">Monitor your progress</p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-3">
+              <span className="text-2xl">🫀</span>
+              <div>
+                <p className="font-medium text-text-primary dark:text-slate-100">Blood Pressure</p>
+                <p className="text-sm text-text-secondary dark:text-slate-400">Keep tabs on your vitals</p>
+              </div>
+            </div>
+          </div>
         </div>
-        <h2 className="text-2xl font-bold text-text-primary dark:text-slate-100 mb-3">
-          Welcome to Type2Lyfe!
-        </h2>
-        <p className="text-text-secondary dark:text-slate-400 mb-6 max-w-md">
-          Start tracking your health journey by logging your first entry. Tap the <PlusIcon className="w-4 h-4 inline mx-1" /> button below to get started.
-        </p>
-        <div className="bg-card dark:bg-slate-800 p-6 rounded-2xl shadow-card border border-border dark:border-slate-700 max-w-md">
-          <h3 className="font-semibold text-text-primary dark:text-slate-100 mb-3">You can track:</h3>
-          <ul className="text-left text-text-secondary dark:text-slate-400 space-y-2">
-            <li>🩸 Glucose readings (voice, manual, or photo)</li>
-            <li>🍽️ Meals with AI photo analysis</li>
-            <li>💊 Medications</li>
-            <li>⚖️ Weight</li>
-            <li>🫀 Blood pressure</li>
-          </ul>
-        </div>
-      </div>
+      </EmptyState>
     );
   }
 
