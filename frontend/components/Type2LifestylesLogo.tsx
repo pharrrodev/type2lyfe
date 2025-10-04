@@ -17,8 +17,8 @@ const Type2LifestylesLogo: React.FC<Type2LifestylesLogoProps> = ({
     lg: iconOnly ? 'h-12' : 'h-16'
   };
 
-  // Using the new Type2Lifestyles logo PNG with no background
-  const logoPath = '/logo_no_background_main.png';
+  // Using the SVG logo for best quality and performance (scalable, small file size)
+  const logoPath = '/main_logo_svg.svg';
 
   if (iconOnly) {
     // For icon-only mode, we'll use the same logo but with smaller size
