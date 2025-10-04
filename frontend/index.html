@@ -158,6 +158,22 @@
       .animate-slide-in-right {
         animation: slide-in-right 0.3s ease-out;
       }
+
+      /* Dialog animations */
+      @keyframes slide-in-up {
+        from {
+          transform: translateY(20px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      .animate-slide-in-up {
+        animation: slide-in-up 0.3s ease-out;
+      }
     </style>
 </head>
   <body class="bg-background dark:bg-slate-900">

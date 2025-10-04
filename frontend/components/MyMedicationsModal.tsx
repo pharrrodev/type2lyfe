@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { UserMedication } from '../types';
 import { XIcon, PillIcon, TrashIcon, PencilIcon } from './Icons';
 import { ukMedications, MedicationInfo } from '../data/medications';
+import ConfirmDialog from './ConfirmDialog';
+import { useConfirm } from '../hooks/useConfirm';
 
 interface MyMedicationsModalProps {
   isOpen: boolean;
@@ -135,12 +137,27 @@ const MedForm: React.FC<{
 const MyMedicationsModal: React.FC<MyMedicationsModalProps> = ({ isOpen, onClose, userMedications, onSave, onDelete }) => {
     // FIX: Changed type to allow partial object for new medications.
     const [editingMed, setEditingMed] = useState<Partial<UserMedication> | null>(null);
+    const { isOpen: isConfirmOpen, options: confirmOptions, confirm, handleConfirm, handleCancel } = useConfirm();
 
     useEffect(() => {
         if (!isOpen) {
             setEditingMed(null);
         }
     }, [isOpen]);
+
+    const handleDeleteClick = async (med: UserMedication) => {
+        const confirmed = await confirm({
+            title: 'Delete Medication',
+            message: `Are you sure you want to delete ${med.name}? This action cannot be undone.`,
+            confirmText: 'Delete',
+            cancelText: 'Cancel',
+            variant: 'danger'
+        });
+
+        if (confirmed) {
+            onDelete(med.id);
+        }
+    };
 
     const handleSave = (med: Omit<UserMedication, 'id'> & { id?: string }) => {
         onSave(med);
@@ -171,7 +188,7 @@ const MyMedicationsModal: React.FC<MyMedicationsModalProps> = ({ isOpen, onClose
                                 </div>
                                 <div className="space-x-2">
                                     <button onClick={() => setEditingMed(med)} className="p-2 text-text-secondary hover:text-primary transition-all duration-300"><PencilIcon className="w-5 h-5"/></button>
-                                    <button onClick={() => onDelete(med.id)} className="p-2 text-text-secondary hover:text-danger transition-all duration-300"><TrashIcon className="w-5 h-5"/></button>
+                                    <button onClick={() => handleDeleteClick(med)} className="p-2 text-text-secondary hover:text-danger transition-all duration-300"><TrashIcon className="w-5 h-5"/></button>
                                 </div>
                             </div>
                         ))
@@ -190,6 +207,18 @@ const MyMedicationsModal: React.FC<MyMedicationsModalProps> = ({ isOpen, onClose
                     </div>
                 )}
             </div>
+
+            {/* Confirmation Dialog */}
+            <ConfirmDialog
+                isOpen={isConfirmOpen}
+                onClose={handleCancel}
+                onConfirm={handleConfirm}
+                title={confirmOptions.title}
+                message={confirmOptions.message}
+                confirmText={confirmOptions.confirmText}
+                cancelText={confirmOptions.cancelText}
+                variant={confirmOptions.variant}
+            />
         </div>
     );
 };
