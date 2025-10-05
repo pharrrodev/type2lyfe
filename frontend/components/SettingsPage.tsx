@@ -176,6 +176,15 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
         {/* App Info */}
         <div className="mt-1 sm:mt-3 mb-1 text-center text-text-secondary dark:text-slate-500 text-xs">
           <p>Type2Lyfe v1.0.0</p>
+          <div className="mt-2 flex justify-center gap-3">
+            <a href="/privacy.html" target="_blank" className="text-primary dark:text-primary hover:underline">
+              Privacy Policy
+            </a>
+            <span>•</span>
+            <a href="/terms.html" target="_blank" className="text-primary dark:text-primary hover:underline">
+              Terms of Service
+            </a>
+          </div>
         </div>
       </div>
 

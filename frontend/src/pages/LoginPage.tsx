@@ -55,6 +55,14 @@ const LoginPage: React.FC = () => {
         <p className="text-text-secondary dark:text-slate-400 text-center mt-4">
           Don't have an account? <a href="/register" className="text-primary dark:text-primary-light font-semibold hover:underline">Register</a>
         </p>
+        <div className="text-center mt-6 text-xs text-text-secondary dark:text-slate-500">
+          <p>By logging in, you agree to our</p>
+          <div className="mt-1 flex justify-center gap-2">
+            <a href="/privacy.html" target="_blank" className="text-primary dark:text-primary hover:underline">Privacy Policy</a>
+            <span>and</span>
+            <a href="/terms.html" target="_blank" className="text-primary dark:text-primary hover:underline">Terms of Service</a>
+          </div>
+        </div>
       </form>
     </div>
   );
