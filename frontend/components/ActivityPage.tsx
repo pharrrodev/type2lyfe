@@ -13,8 +13,7 @@ interface ActivityPageProps {
 
 const ActivityPage: React.FC<ActivityPageProps> = ({ logs, onOpenActionSheet, onEdit, onDelete }) => {
   const [currentPage, setCurrentPage] = useState(1);
-  // Display 5 activity cards per page for optimal mobile UX
-  const itemsPerPage = 5;
+  const itemsPerPage = 6;
 
   const totalPages = Math.ceil(logs.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
