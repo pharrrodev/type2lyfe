@@ -20,34 +20,51 @@ const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', width: '300px' }}>
-        <h2>Register</h2>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        <input
-          type="text"
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          style={{ marginBottom: '10px', padding: '8px' }}
-        />
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          style={{ marginBottom: '10px', padding: '8px' }}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          style={{ marginBottom: '10px', padding: '8px' }}
-        />
-        <button type="submit" style={{ padding: '10px' }}>Register</button>
-        <p>
-          Already have an account? <a href="/login">Login</a>
+    <div className="flex justify-center items-center min-h-screen bg-background dark:bg-slate-900 px-4">
+      <form onSubmit={handleSubmit} className="flex flex-col w-full max-w-md space-y-4 bg-card dark:bg-slate-800 p-8 rounded-2xl shadow-card">
+        <h2 className="text-3xl font-bold text-text-primary dark:text-slate-100 text-center mb-2">Register</h2>
+        {error && <p className="text-danger dark:text-red-400 text-center text-sm">{error}</p>}
+        <div>
+          <label htmlFor="username" className="block text-sm font-semibold text-text-primary dark:text-slate-100 mb-2">Username</label>
+          <input
+            id="username"
+            type="text"
+            placeholder="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            className="w-full bg-background dark:bg-slate-700 text-text-primary dark:text-slate-100 rounded-lg border-2 border-border dark:border-slate-600 shadow-sm focus:border-primary dark:focus:border-primary focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300 p-3"
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="email" className="block text-sm font-semibold text-text-primary dark:text-slate-100 mb-2">Email</label>
+          <input
+            id="email"
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full bg-background dark:bg-slate-700 text-text-primary dark:text-slate-100 rounded-lg border-2 border-border dark:border-slate-600 shadow-sm focus:border-primary dark:focus:border-primary focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300 p-3"
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="password" className="block text-sm font-semibold text-text-primary dark:text-slate-100 mb-2">Password</label>
+          <input
+            id="password"
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full bg-background dark:bg-slate-700 text-text-primary dark:text-slate-100 rounded-lg border-2 border-border dark:border-slate-600 shadow-sm focus:border-primary dark:focus:border-primary focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300 p-3"
+            required
+          />
+        </div>
+        <button type="submit" className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-lg hover:shadow-fab transition-all duration-300 mt-4">
+          Register
+        </button>
+        <p className="text-text-secondary dark:text-slate-400 text-center mt-4">
+          Already have an account? <a href="/login" className="text-primary dark:text-primary-light font-semibold hover:underline">Login</a>
         </p>
       </form>
     </div>

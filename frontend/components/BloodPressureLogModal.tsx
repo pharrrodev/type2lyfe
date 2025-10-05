@@ -13,7 +13,7 @@ interface BloodPressureLogModalProps {
 
 const BloodPressureLogModal: React.FC<BloodPressureLogModalProps> = ({ isOpen, onClose, onAddReading, customTimestamp }) => {
   // Voice removed - saying three separate numbers (systolic, diastolic, pulse) is cumbersome
-  const [activeTab, setActiveTab] = useState<'manual' | 'photo'>('manual');
+  const [activeTab, setActiveTab] = useState<'manual' | 'photo'>('photo');
   
   // Manual state
   const [manualSystolic, setManualSystolic] = useState('');
@@ -33,7 +33,7 @@ const BloodPressureLogModal: React.FC<BloodPressureLogModalProps> = ({ isOpen, o
 
   useEffect(() => {
     if (!isOpen) {
-      setActiveTab('manual');
+      setActiveTab('photo');
       setManualSystolic('');
       setManualDiastolic('');
       setManualPulse('');
@@ -218,13 +218,13 @@ const BloodPressureLogModal: React.FC<BloodPressureLogModalProps> = ({ isOpen, o
         </div>
 
         <div className="flex border-b border-border dark:border-slate-700">
-          <button onClick={() => setActiveTab('manual')} className={`flex-1 py-3 text-center font-semibold transition-all duration-300 ${activeTab === 'manual' ? 'text-primary dark:text-primary border-b-2 border-primary' : 'text-text-secondary dark:text-slate-400 hover:text-primary dark:hover:text-primary'}`}>
-            <PencilIcon className="w-5 h-5 inline mr-1" />
-            Manual
-          </button>
           <button onClick={() => setActiveTab('photo')} className={`flex-1 py-3 text-center font-semibold transition-all duration-300 ${activeTab === 'photo' ? 'text-primary dark:text-primary border-b-2 border-primary' : 'text-text-secondary dark:text-slate-400 hover:text-primary dark:hover:text-primary'}`}>
             <CameraIcon className="w-5 h-5 inline mr-1" />
             Photo
+          </button>
+          <button onClick={() => setActiveTab('manual')} className={`flex-1 py-3 text-center font-semibold transition-all duration-300 ${activeTab === 'manual' ? 'text-primary dark:text-primary border-b-2 border-primary' : 'text-text-secondary dark:text-slate-400 hover:text-primary dark:hover:text-primary'}`}>
+            <PencilIcon className="w-5 h-5 inline mr-1" />
+            Manual
           </button>
         </div>
 
