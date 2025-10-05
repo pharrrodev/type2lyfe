@@ -65,11 +65,11 @@ const Toast: React.FC<ToastProps> = ({ id, type, message, duration = 5000, onClo
 
   return (
     <div
-      className={`${getBackgroundColor()} ${getTextColor()} border-2 rounded-lg shadow-lg p-4 mb-3 flex items-start space-x-3 animate-slide-in-right max-w-md`}
+      className={`${getBackgroundColor()} ${getTextColor()} border-2 rounded-lg shadow-lg p-3 sm:p-4 mb-2 sm:mb-3 flex items-start space-x-2 sm:space-x-3 animate-slide-in-right w-full sm:max-w-md`}
       role="alert"
     >
       {getIcon()}
-      <p className="flex-1 text-sm font-medium">{message}</p>
+      <p className="flex-1 text-xs sm:text-sm font-medium leading-tight sm:leading-normal">{message}</p>
       <button
         onClick={() => onClose(id)}
         className="flex-shrink-0 hover:opacity-70 transition-opacity"

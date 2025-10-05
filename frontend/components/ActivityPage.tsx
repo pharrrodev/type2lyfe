@@ -50,7 +50,7 @@ const ActivityPage: React.FC<ActivityPageProps> = ({ logs, onOpenActionSheet, on
           </div>
         )}
       </div>
-      <div className="flex-grow flex flex-col gap-0.5 sm:gap-1">
+      <div className="flex-grow flex flex-col space-y-2 sm:space-y-3">
         {currentLogs.length > 0 ? (
           currentLogs.map(log => (
             <LogEntry

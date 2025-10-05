@@ -191,13 +191,13 @@ const LogEntry: React.FC<LogEntryProps> = ({ log, onEdit, onDelete }) => {
   };
 
   return (
-    <div className="bg-card dark:bg-slate-800 p-2 sm:p-4 rounded-2xl shadow-card hover:shadow-card-hover transition-all duration-300 flex items-start space-x-2 sm:space-x-3 border-2 border-border dark:border-slate-700 group">
-      <div className="text-center w-12 sm:w-16">
+    <div className="w-full bg-card dark:bg-slate-800 p-2 sm:p-4 rounded-2xl shadow-card hover:shadow-card-hover transition-all duration-300 flex items-start space-x-2 sm:space-x-3 border-2 border-border dark:border-slate-700 group">
+      <div className="text-center w-12 sm:w-16 flex-shrink-0">
         <p className="text-sm sm:text-base font-semibold text-text-primary dark:text-slate-100">{timeString}</p>
         <p className="text-xs text-text-secondary dark:text-slate-400">{ampm}</p>
         <p className="text-xs text-text-secondary dark:text-slate-500 mt-0.5">{dateString}</p>
       </div>
-      <div className="border-l-2 border-border dark:border-slate-700 pl-2 sm:pl-3 flex-1">
+      <div className="border-l-2 border-border dark:border-slate-700 pl-2 sm:pl-3 flex-1 min-w-0">
         {renderContent()}
       </div>
 

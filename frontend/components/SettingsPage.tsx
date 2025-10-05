@@ -39,14 +39,14 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
   };
 
   return (
-    <div className="h-full flex flex-col overflow-hidden p-4">
-      <div className="max-w-4xl mx-auto w-full flex-1 flex flex-col">
-        <h1 className="text-2xl font-bold text-text-primary dark:text-slate-100 mb-4">Settings</h1>
+    <div className="h-full flex flex-col overflow-y-auto p-2 sm:p-4">
+      <div className="max-w-4xl mx-auto w-full">
+        <h1 className="text-xl sm:text-2xl font-bold text-text-primary dark:text-slate-100 mb-3 sm:mb-4">Settings</h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 pb-4">
           {/* Preferences Section */}
-          <section className="bg-card dark:bg-slate-800 rounded-2xl shadow-card p-4 border border-border dark:border-slate-700 flex flex-col">
-            <h2 className="text-lg font-semibold text-text-primary dark:text-slate-100 mb-3">Preferences</h2>
+          <section className="bg-card dark:bg-slate-800 rounded-2xl shadow-card p-3 sm:p-4 border border-border dark:border-slate-700">
+            <h2 className="text-base sm:text-lg font-semibold text-text-primary dark:text-slate-100 mb-2 sm:mb-3">Preferences</h2>
 
             {/* Dark Mode */}
             <div className="flex items-center justify-between py-2 border-b border-border dark:border-slate-700">
@@ -130,8 +130,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
 
           {/* Health Data Section */}
           {onOpenMyMedications && (
-            <section className="bg-card dark:bg-slate-800 rounded-2xl shadow-card p-4 border border-border dark:border-slate-700 flex flex-col">
-              <h2 className="text-lg font-semibold text-text-primary dark:text-slate-100 mb-3">Health Data</h2>
+            <section className="bg-card dark:bg-slate-800 rounded-2xl shadow-card p-3 sm:p-4 border border-border dark:border-slate-700">
+              <h2 className="text-base sm:text-lg font-semibold text-text-primary dark:text-slate-100 mb-2 sm:mb-3">Health Data</h2>
 
               {/* Export Data */}
               <div className="mb-3">
@@ -163,8 +163,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
           )}
 
           {/* Account Section */}
-          <section className="bg-card dark:bg-slate-800 rounded-2xl shadow-card p-4 border border-border dark:border-slate-700 flex flex-col">
-            <h2 className="text-lg font-semibold text-text-primary dark:text-slate-100 mb-3">Account</h2>
+          <section className="bg-card dark:bg-slate-800 rounded-2xl shadow-card p-3 sm:p-4 border border-border dark:border-slate-700">
+            <h2 className="text-base sm:text-lg font-semibold text-text-primary dark:text-slate-100 mb-2 sm:mb-3">Account</h2>
 
             {/* Logout */}
             <button
@@ -178,7 +178,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
         </div>
 
         {/* App Info */}
-        <div className="mt-3 text-center text-text-secondary dark:text-slate-500 text-xs">
+        <div className="mt-2 sm:mt-3 mb-2 text-center text-text-secondary dark:text-slate-500 text-xs">
           <p>Type2Lyfe v1.0.0 • Health tracking made simple</p>
         </div>
       </div>
