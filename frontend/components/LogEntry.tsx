@@ -21,26 +21,28 @@ const GlucoseEntry: React.FC<{ log: GlucoseReading }> = ({ log }) => {
 
   return (
     <div className="flex items-center space-x-3">
-      <div className="bg-info bg-opacity-10 dark:bg-opacity-20 rounded-full p-2">
+      <div className="bg-info bg-opacity-10 dark:bg-opacity-20 rounded-full p-2 flex-shrink-0">
         <DropletIcon className="w-5 h-5 text-info dark:text-info" />
       </div>
-      <div className="flex-1">
-        <p className="font-semibold text-text-primary dark:text-slate-100 text-sm">Glucose Reading</p>
-        <p className="text-xs text-text-secondary dark:text-slate-400 capitalize">{log.context ? log.context.replace('_', ' ') : 'Random'}</p>
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold text-text-primary dark:text-slate-100 text-sm truncate">Glucose Reading</p>
+        <p className="text-xs text-text-secondary dark:text-slate-400 capitalize truncate">{log.context ? log.context.replace('_', ' ') : 'Random'}</p>
       </div>
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-1.5 flex-shrink-0">
         <div className="flex items-baseline space-x-1">
           <p className="text-xl font-bold text-info dark:text-info">{log.value}</p>
           <p className="text-xs text-text-secondary dark:text-slate-500">{log.displayUnit}</p>
         </div>
         {status && (
-          <span className={`${status.color} text-white text-xs font-semibold px-2 py-0.5 rounded-full`}>
+          <span className={`${status.color} text-white text-xs font-semibold px-1.5 sm:px-2 py-0.5 rounded-full whitespace-nowrap`}>
             {status.status}
           </span>
         )}
-        {log.source === 'voice' && <MicIcon className="w-4 h-4 text-info dark:text-info" />}
-        {log.source === 'manual' && <KeyboardIcon className="w-4 h-4 text-info dark:text-info" />}
-        {log.source === 'photo_analysis' && <CameraIcon className="w-4 h-4 text-info dark:text-info" />}
+        <div className="flex-shrink-0">
+          {log.source === 'voice' && <MicIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-info dark:text-info" />}
+          {log.source === 'manual' && <KeyboardIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-info dark:text-info" />}
+          {log.source === 'photo_analysis' && <CameraIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-info dark:text-info" />}
+        </div>
       </div>
     </div>
   );
@@ -49,18 +51,20 @@ const GlucoseEntry: React.FC<{ log: GlucoseReading }> = ({ log }) => {
 const MealEntry: React.FC<{ log: Meal }> = ({ log }) => {
   return (
     <div className="flex items-start space-x-3">
-      <div className="bg-success bg-opacity-10 dark:bg-opacity-20 rounded-full p-2">
+      <div className="bg-success bg-opacity-10 dark:bg-opacity-20 rounded-full p-2 flex-shrink-0">
         <ForkSpoonIcon className="w-5 h-5 text-success dark:text-primary" />
       </div>
-      <div className="flex-1">
-        <div className="flex items-center gap-2">
-          <p className="font-semibold text-text-primary dark:text-slate-100 capitalize text-sm">{log.mealType}</p>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5">
+          <p className="font-semibold text-text-primary dark:text-slate-100 capitalize text-sm truncate">{log.mealType}</p>
           {/* Source indicators */}
-          {log.source === 'voice' && <span title="Logged by voice"><MicIcon className="w-4 h-4 text-success dark:text-success" /></span>}
-          {log.source === 'manual' && <span title="Logged manually"><KeyboardIcon className="w-4 h-4 text-success dark:text-success" /></span>}
-          {log.source === 'photo_analysis' && <span title="Analyzed from photo"><CameraIcon className="w-4 h-4 text-success dark:text-success" /></span>}
+          <div className="flex-shrink-0">
+            {log.source === 'voice' && <span title="Logged by voice"><MicIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success dark:text-success" /></span>}
+            {log.source === 'manual' && <span title="Logged manually"><KeyboardIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success dark:text-success" /></span>}
+            {log.source === 'photo_analysis' && <span title="Analyzed from photo"><CameraIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success dark:text-success" /></span>}
+          </div>
         </div>
-        <p className="text-xs text-text-secondary dark:text-slate-400">
+        <p className="text-xs text-text-secondary dark:text-slate-400 truncate">
           {log.foodItems && log.foodItems.length > 0
             ? log.foodItems.map(item => item.name).join(', ')
             : 'Meal logged'}
@@ -77,16 +81,18 @@ const MealEntry: React.FC<{ log: Meal }> = ({ log }) => {
 const MedicationEntry: React.FC<{ log: Medication }> = ({ log }) => {
   return (
     <div className="flex items-center space-x-3">
-      <div className="bg-accent-purple bg-opacity-10 dark:bg-opacity-20 rounded-full p-2">
+      <div className="bg-accent-purple bg-opacity-10 dark:bg-opacity-20 rounded-full p-2 flex-shrink-0">
         <PillIcon className="w-5 h-5 text-accent-purple dark:text-accent-purple" />
       </div>
-      <div className="flex-1">
-        <div className="flex items-center gap-2">
-          <p className="font-semibold text-text-primary dark:text-slate-100 text-sm">{log.name}</p>
-          {log.source === 'voice' && <MicIcon className="w-4 h-4 text-accent-purple dark:text-accent-purple" />}
-          {log.source === 'manual' && <KeyboardIcon className="w-4 h-4 text-accent-purple dark:text-accent-purple" />}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5">
+          <p className="font-semibold text-text-primary dark:text-slate-100 text-sm truncate">{log.name}</p>
+          <div className="flex-shrink-0">
+            {log.source === 'voice' && <MicIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-accent-purple dark:text-accent-purple" />}
+            {log.source === 'manual' && <KeyboardIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-accent-purple dark:text-accent-purple" />}
+          </div>
         </div>
-        <p className="text-xs text-text-secondary dark:text-slate-400">{`${log.quantity} x ${log.dosage}${log.unit}`}</p>
+        <p className="text-xs text-text-secondary dark:text-slate-400 truncate">{`${log.quantity} x ${log.dosage}${log.unit}`}</p>
       </div>
     </div>
   );
@@ -95,19 +101,21 @@ const MedicationEntry: React.FC<{ log: Medication }> = ({ log }) => {
 const WeightEntry: React.FC<{ log: WeightReading }> = ({ log }) => {
     return (
       <div className="flex items-center space-x-3">
-        <div className="bg-warning bg-opacity-10 dark:bg-opacity-20 rounded-full p-2">
+        <div className="bg-warning bg-opacity-10 dark:bg-opacity-20 rounded-full p-2 flex-shrink-0">
           <WeightScaleIcon className="w-5 h-5 text-warning" />
         </div>
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <p className="font-semibold text-text-primary dark:text-slate-100 text-sm">Weight Reading</p>
-            {log.source === 'voice' && <MicIcon className="w-4 h-4 text-warning" />}
-            {log.source === 'manual' && <KeyboardIcon className="w-4 h-4 text-warning" />}
-            {log.source === 'photo_analysis' && <CameraIcon className="w-4 h-4 text-warning" />}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5">
+            <p className="font-semibold text-text-primary dark:text-slate-100 text-sm truncate">Weight Reading</p>
+            <div className="flex-shrink-0">
+              {log.source === 'voice' && <MicIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-warning" />}
+              {log.source === 'manual' && <KeyboardIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-warning" />}
+              {log.source === 'photo_analysis' && <CameraIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-warning" />}
+            </div>
           </div>
-          <p className="text-xs text-text-secondary dark:text-slate-400">Logged {log.source === 'voice' ? 'by voice' : (log.source === 'photo_analysis' ? 'by photo' : 'manually')}</p>
+          <p className="text-xs text-text-secondary dark:text-slate-400 truncate">Logged {log.source === 'voice' ? 'by voice' : (log.source === 'photo_analysis' ? 'by photo' : 'manually')}</p>
         </div>
-        <div className="flex items-baseline space-x-1">
+        <div className="flex items-baseline space-x-1 flex-shrink-0">
           <p className="text-xl font-bold text-warning">{log.value}</p>
           <p className="text-xs text-text-secondary dark:text-slate-500">{log.unit}</p>
         </div>
@@ -132,25 +140,27 @@ const BloodPressureEntry: React.FC<{ log: BloodPressureReading }> = ({ log }) =>
 
     return (
         <div className="flex items-center space-x-3">
-        <div className="bg-danger bg-opacity-10 dark:bg-opacity-20 rounded-full p-2">
+        <div className="bg-danger bg-opacity-10 dark:bg-opacity-20 rounded-full p-2 flex-shrink-0">
             <BloodPressureIcon className="w-5 h-5 text-danger" />
         </div>
-        <div className="flex-1">
-            <div className="flex items-center gap-2">
-                <p className="font-semibold text-text-primary dark:text-slate-100 text-sm">Blood Pressure</p>
-                {log.source === 'voice' && <MicIcon className="w-4 h-4 text-danger" />}
-                {log.source === 'manual' && <KeyboardIcon className="w-4 h-4 text-danger" />}
-                {log.source === 'photo_analysis' && <CameraIcon className="w-4 h-4 text-danger" />}
+        <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5">
+                <p className="font-semibold text-text-primary dark:text-slate-100 text-sm truncate">Blood Pressure</p>
+                <div className="flex-shrink-0">
+                  {log.source === 'voice' && <MicIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-danger" />}
+                  {log.source === 'manual' && <KeyboardIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-danger" />}
+                  {log.source === 'photo_analysis' && <CameraIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-danger" />}
+                </div>
             </div>
-            <p className="text-xs text-text-secondary dark:text-slate-400">Pulse: {log.pulse} bpm</p>
+            <p className="text-xs text-text-secondary dark:text-slate-400 truncate">Pulse: {log.pulse} bpm</p>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1.5 flex-shrink-0">
             <div className="text-right">
                 <p className="text-xl font-bold text-danger">{log.systolic} / {log.diastolic}</p>
                 <p className="text-xs text-text-secondary dark:text-slate-500">mmHg</p>
             </div>
             {status && (
-                <span className={`${status.color} text-white text-xs font-semibold px-2 py-0.5 rounded-full`}>
+                <span className={`${status.color} text-white text-xs font-semibold px-1.5 sm:px-2 py-0.5 rounded-full whitespace-nowrap`}>
                     {status.status}
                 </span>
             )}

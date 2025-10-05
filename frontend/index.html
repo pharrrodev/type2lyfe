@@ -30,30 +30,30 @@
           extend: {
             // Design System v2.0 - Color Palette
             colors: {
-              // Main Colors
-              background: '#F7F9FC',
-              card: '#FFFFFF',
-              border: '#EFF3F8',
+              // Main Colors (using CSS variables for light/dark mode)
+              background: 'var(--color-background)',
+              card: 'var(--color-card)',
+              border: 'var(--color-border)',
 
-              // Primary Brand Color (Teal)
+              // Primary Brand Color (Teal) - same in both modes
               primary: '#14B8A6',
               'primary-dark': '#0D9488',
 
-              // Text Colors
-              'text-primary': '#1E293B',
-              'text-secondary': '#64748B',
+              // Text Colors (using CSS variables for light/dark mode)
+              'text-primary': 'var(--color-text-primary)',
+              'text-secondary': 'var(--color-text-secondary)',
 
-              // Status Colors
+              // Status Colors - same in both modes
               success: '#34D399',
               warning: '#FBBF24',
               danger: '#F87171',
               info: '#38BDF8',
 
-              // Legacy compatibility (mapped to new colors)
-              'bg-light': '#F7F9FC',
-              'bg-white': '#FFFFFF',
-              'border-light': '#EFF3F8',
-              'text-light': '#64748B',
+              // Legacy compatibility (using CSS variables)
+              'bg-light': 'var(--color-background)',
+              'bg-white': 'var(--color-card)',
+              'border-light': 'var(--color-border)',
+              'text-light': 'var(--color-text-secondary)',
 
               // Metric-specific accent colors (kept for backward compatibility)
               'accent-blue': '#38BDF8',
@@ -100,6 +100,25 @@
     <style>
       /* Import Inter font (Design System v2.0) */
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+      /* CSS Variables for Light/Dark Mode */
+      :root {
+        /* Light Mode Colors */
+        --color-background: #F7F9FC;
+        --color-card: #FFFFFF;
+        --color-border: #EFF3F8;
+        --color-text-primary: #1E293B;
+        --color-text-secondary: #64748B;
+      }
+
+      .dark {
+        /* Dark Mode Colors */
+        --color-background: #0F172A;
+        --color-card: #1E293B;
+        --color-border: #334155;
+        --color-text-primary: #F1F5F9;
+        --color-text-secondary: #94A3B8;
+      }
 
       /* Styles to make the app feel more native */
       html, body, #root {
