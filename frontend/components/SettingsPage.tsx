@@ -39,38 +39,36 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
   };
 
   return (
-    <div className="h-full flex flex-col overflow-y-auto p-2 sm:p-4">
+    <div className="h-full flex flex-col overflow-y-auto p-1.5 sm:p-4">
       <div className="max-w-4xl mx-auto w-full">
-        <h1 className="text-xl sm:text-2xl font-bold text-text-primary dark:text-slate-100 mb-3 sm:mb-4">Settings</h1>
+        <h1 className="text-lg sm:text-2xl font-bold text-text-primary dark:text-slate-100 mb-2 sm:mb-4">Settings</h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 pb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4 pb-2">
           {/* Preferences Section */}
-          <section className="bg-card dark:bg-slate-800 rounded-2xl shadow-card p-3 sm:p-4 border border-border dark:border-slate-700">
-            <h2 className="text-base sm:text-lg font-semibold text-text-primary dark:text-slate-100 mb-2 sm:mb-3">Preferences</h2>
+          <section className="bg-card dark:bg-slate-800 rounded-xl shadow-card p-2.5 sm:p-4 border border-border dark:border-slate-700">
+            <h2 className="text-sm sm:text-lg font-semibold text-text-primary dark:text-slate-100 mb-2">Preferences</h2>
 
             {/* Dark Mode */}
-            <div className="flex items-center justify-between py-2 border-b border-border dark:border-slate-700">
+            <div className="flex items-center justify-between py-1.5 border-b border-border dark:border-slate-700">
               <div>
-                <h3 className="text-sm font-medium text-text-primary dark:text-slate-100">Dark Mode</h3>
-                <p className="text-xs text-text-secondary dark:text-slate-400">Toggle theme</p>
+                <h3 className="text-xs sm:text-sm font-medium text-text-primary dark:text-slate-100">Dark Mode</h3>
               </div>
               <DarkModeToggle />
             </div>
 
             {/* Glucose Unit */}
-            <div className="flex items-center justify-between py-2 border-b border-border dark:border-slate-700">
+            <div className="flex items-center justify-between py-1.5 border-b border-border dark:border-slate-700">
               <div className="flex items-center">
-                <DropletIcon className="w-4 h-4 text-info dark:text-primary mr-2" />
+                <DropletIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-info dark:text-primary mr-1.5" />
                 <div>
-                  <h3 className="text-sm font-medium text-text-primary dark:text-slate-100">Glucose Unit</h3>
-                  <p className="text-xs text-text-secondary dark:text-slate-400">Preferred unit</p>
+                  <h3 className="text-xs sm:text-sm font-medium text-text-primary dark:text-slate-100">Glucose Unit</h3>
                 </div>
               </div>
               <div className="flex gap-1">
                 <button
                   type="button"
                   onClick={() => onGlucoseUnitChange('mg/dL')}
-                  className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all duration-300 ${
+                  className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs rounded-lg font-medium transition-all duration-300 ${
                     glucoseUnit === 'mg/dL'
                       ? 'bg-primary dark:bg-primary text-white'
                       : 'bg-card dark:bg-slate-700 text-text-secondary dark:text-slate-400 border border-border dark:border-slate-600 hover:border-primary dark:hover:border-primary'
@@ -81,7 +79,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                 <button
                   type="button"
                   onClick={() => onGlucoseUnitChange('mmol/L')}
-                  className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all duration-300 ${
+                  className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs rounded-lg font-medium transition-all duration-300 ${
                     glucoseUnit === 'mmol/L'
                       ? 'bg-primary dark:bg-primary text-white'
                       : 'bg-card dark:bg-slate-700 text-text-secondary dark:text-slate-400 border border-border dark:border-slate-600 hover:border-primary dark:hover:border-primary'
@@ -93,19 +91,18 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
             </div>
 
             {/* Weight Unit */}
-            <div className="flex items-center justify-between py-2">
+            <div className="flex items-center justify-between py-1.5">
               <div className="flex items-center">
-                <WeightScaleIcon className="w-4 h-4 text-warning dark:text-primary mr-2" />
+                <WeightScaleIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-warning dark:text-primary mr-1.5" />
                 <div>
-                  <h3 className="text-sm font-medium text-text-primary dark:text-slate-100">Weight Unit</h3>
-                  <p className="text-xs text-text-secondary dark:text-slate-400">Preferred unit</p>
+                  <h3 className="text-xs sm:text-sm font-medium text-text-primary dark:text-slate-100">Weight Unit</h3>
                 </div>
               </div>
               <div className="flex gap-1">
                 <button
                   type="button"
                   onClick={() => onWeightUnitChange('kg')}
-                  className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all duration-300 ${
+                  className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs rounded-lg font-medium transition-all duration-300 ${
                     weightUnit === 'kg'
                       ? 'bg-primary dark:bg-primary text-white'
                       : 'bg-card dark:bg-slate-700 text-text-secondary dark:text-slate-400 border border-border dark:border-slate-600 hover:border-primary dark:hover:border-primary'
@@ -116,7 +113,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                 <button
                   type="button"
                   onClick={() => onWeightUnitChange('lbs')}
-                  className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-all duration-300 ${
+                  className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs rounded-lg font-medium transition-all duration-300 ${
                     weightUnit === 'lbs'
                       ? 'bg-primary dark:bg-primary text-white'
                       : 'bg-card dark:bg-slate-700 text-text-secondary dark:text-slate-400 border border-border dark:border-slate-600 hover:border-primary dark:hover:border-primary'
@@ -130,11 +127,11 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
 
           {/* Health Data Section */}
           {onOpenMyMedications && (
-            <section className="bg-card dark:bg-slate-800 rounded-2xl shadow-card p-3 sm:p-4 border border-border dark:border-slate-700">
-              <h2 className="text-base sm:text-lg font-semibold text-text-primary dark:text-slate-100 mb-2 sm:mb-3">Health Data</h2>
+            <section className="bg-card dark:bg-slate-800 rounded-xl shadow-card p-2.5 sm:p-4 border border-border dark:border-slate-700">
+              <h2 className="text-sm sm:text-lg font-semibold text-text-primary dark:text-slate-100 mb-2">Health Data</h2>
 
               {/* Export Data */}
-              <div className="mb-3">
+              <div className="mb-2">
                 <ExportButton
                   glucoseReadings={glucoseReadings}
                   meals={meals}
@@ -148,29 +145,28 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
               <button
                 type="button"
                 onClick={onOpenMyMedications}
-                className="w-full flex items-center justify-between p-3 bg-card dark:bg-slate-700 border border-border dark:border-slate-600 rounded-lg hover:border-primary dark:hover:border-primary transition-all duration-300"
+                className="w-full flex items-center justify-between p-2 sm:p-3 bg-card dark:bg-slate-700 border border-border dark:border-slate-600 rounded-lg hover:border-primary dark:hover:border-primary transition-all duration-300"
               >
                 <div className="flex items-center">
-                  <PillIcon className="w-4 h-4 text-accent-purple dark:text-primary mr-2" />
+                  <PillIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-accent-purple dark:text-primary mr-1.5" />
                   <div className="text-left">
-                    <h3 className="text-sm font-medium text-text-primary dark:text-slate-100">My Medications</h3>
-                    <p className="text-xs text-text-secondary dark:text-slate-400">Manage list</p>
+                    <h3 className="text-xs sm:text-sm font-medium text-text-primary dark:text-slate-100">My Medications</h3>
                   </div>
                 </div>
-                <span className="text-text-secondary dark:text-slate-500">→</span>
+                <span className="text-text-secondary dark:text-slate-500 text-sm">→</span>
               </button>
             </section>
           )}
 
           {/* Account Section */}
-          <section className="bg-card dark:bg-slate-800 rounded-2xl shadow-card p-3 sm:p-4 border border-border dark:border-slate-700">
-            <h2 className="text-base sm:text-lg font-semibold text-text-primary dark:text-slate-100 mb-2 sm:mb-3">Account</h2>
+          <section className="bg-card dark:bg-slate-800 rounded-xl shadow-card p-2.5 sm:p-4 border border-border dark:border-slate-700">
+            <h2 className="text-sm sm:text-lg font-semibold text-text-primary dark:text-slate-100 mb-2">Account</h2>
 
             {/* Logout */}
             <button
               type="button"
               onClick={() => setShowLogoutConfirm(true)}
-              className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-2.5 px-4 rounded-lg transition-all duration-300 shadow-sm hover:shadow-md text-sm"
+              className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-2 sm:py-2.5 px-3 sm:px-4 rounded-lg transition-all duration-300 shadow-sm hover:shadow-md text-xs sm:text-sm"
             >
               Logout
             </button>
@@ -178,8 +174,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
         </div>
 
         {/* App Info */}
-        <div className="mt-2 sm:mt-3 mb-2 text-center text-text-secondary dark:text-slate-500 text-xs">
-          <p>Type2Lyfe v1.0.0 • Health tracking made simple</p>
+        <div className="mt-1 sm:mt-3 mb-1 text-center text-text-secondary dark:text-slate-500 text-xs">
+          <p>Type2Lyfe v1.0.0</p>
         </div>
       </div>
 

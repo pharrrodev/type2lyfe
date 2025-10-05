@@ -108,7 +108,7 @@ const Dashboard: React.FC<DashboardProps> = ({ glucoseReadings, weightReadings, 
   }
 
   return (
-    <div className="h-full flex flex-col space-y-4">
+    <div className="h-full flex flex-col space-y-2">
       {/* Stats Grid - Always Visible */}
       <StatsGrid
         readings={glucoseReadings}
@@ -125,23 +125,23 @@ const Dashboard: React.FC<DashboardProps> = ({ glucoseReadings, weightReadings, 
       />
 
       {/* Active Chart Section */}
-      <section className="bg-card dark:bg-slate-800 p-6 rounded-2xl shadow-card flex flex-col border border-border dark:border-slate-700 flex-grow">
+      <section className="bg-card dark:bg-slate-800 p-3 sm:p-4 rounded-2xl shadow-card flex flex-col border border-border dark:border-slate-700 flex-grow">
         {/* Glucose Chart */}
         {activeTab === 'glucose' && (
           <>
-            <div className="flex justify-between items-center mb-4 flex-shrink-0">
-              <h2 className="text-xl font-semibold text-text-primary dark:text-slate-100">Glucose Trends</h2>
+            <div className="flex justify-between items-center mb-2 flex-shrink-0">
+              <h2 className="text-base sm:text-lg font-semibold text-text-primary dark:text-slate-100">Glucose Trends</h2>
               <DateRangeFilter selectedRange={glucoseDateRange} onRangeChange={setGlucoseDateRange} />
             </div>
-            <div className="flex-grow h-full w-full min-h-[300px]">
+            <div className="flex-grow h-full w-full min-h-[200px]">
               {glucoseReadings.length > 0 ? (
                 <GlucoseChart data={glucoseReadings} unit={unit} />
               ) : (
                 <div className="h-full flex items-center justify-center text-center">
                   <div>
-                    <DropletIcon className="w-12 h-12 text-text-secondary dark:text-slate-600 mx-auto mb-3" />
-                    <p className="text-text-secondary dark:text-slate-400">No glucose readings yet.</p>
-                    <p className="text-text-secondary dark:text-slate-500 text-sm mt-1">Log your first reading to see trends.</p>
+                    <DropletIcon className="w-10 h-10 text-text-secondary dark:text-slate-600 mx-auto mb-2" />
+                    <p className="text-text-secondary dark:text-slate-400 text-sm">No glucose readings yet.</p>
+                    <p className="text-text-secondary dark:text-slate-500 text-xs mt-1">Log your first reading to see trends.</p>
                   </div>
                 </div>
               )}
@@ -152,19 +152,19 @@ const Dashboard: React.FC<DashboardProps> = ({ glucoseReadings, weightReadings, 
         {/* Weight Chart */}
         {activeTab === 'weight' && (
           <>
-            <div className="flex justify-between items-center mb-4 flex-shrink-0">
-              <h2 className="text-xl font-semibold text-text-primary dark:text-slate-100">Weight Trends</h2>
+            <div className="flex justify-between items-center mb-2 flex-shrink-0">
+              <h2 className="text-base sm:text-lg font-semibold text-text-primary dark:text-slate-100">Weight Trends</h2>
               <DateRangeFilter selectedRange={weightDateRange} onRangeChange={setWeightDateRange} />
             </div>
-            <div className="flex-grow h-full w-full min-h-[300px]">
+            <div className="flex-grow h-full w-full min-h-[200px]">
               {weightReadings.length > 0 ? (
                 <WeightChart data={weightReadings} unit={weightUnit} dateRange={weightDateRange || undefined} />
               ) : (
                 <div className="h-full flex items-center justify-center text-center">
                   <div>
-                    <WeightScaleIcon className="w-12 h-12 text-text-secondary dark:text-slate-600 mx-auto mb-3" />
-                    <p className="text-text-secondary dark:text-slate-400">No weight readings yet.</p>
-                    <p className="text-text-secondary dark:text-slate-500 text-sm mt-1">Log your first weight to see trends.</p>
+                    <WeightScaleIcon className="w-10 h-10 text-text-secondary dark:text-slate-600 mx-auto mb-2" />
+                    <p className="text-text-secondary dark:text-slate-400 text-sm">No weight readings yet.</p>
+                    <p className="text-text-secondary dark:text-slate-500 text-xs mt-1">Log your first weight to see trends.</p>
                   </div>
                 </div>
               )}
@@ -175,19 +175,19 @@ const Dashboard: React.FC<DashboardProps> = ({ glucoseReadings, weightReadings, 
         {/* Blood Pressure Chart */}
         {activeTab === 'bp' && (
           <>
-            <div className="flex justify-between items-center mb-4 flex-shrink-0">
-              <h2 className="text-xl font-semibold text-text-primary dark:text-slate-100">Blood Pressure Trends</h2>
+            <div className="flex justify-between items-center mb-2 flex-shrink-0">
+              <h2 className="text-base sm:text-lg font-semibold text-text-primary dark:text-slate-100">Blood Pressure Trends</h2>
               <DateRangeFilter selectedRange={bpDateRange} onRangeChange={setBpDateRange} />
             </div>
-            <div className="flex-grow h-full w-full min-h-[300px]">
+            <div className="flex-grow h-full w-full min-h-[200px]">
               {bloodPressureReadings.length > 0 ? (
                 <BloodPressureChart data={bloodPressureReadings} dateRange={bpDateRange || undefined} />
               ) : (
                 <div className="h-full flex items-center justify-center text-center">
                   <div>
-                    <BloodPressureIcon className="w-12 h-12 text-text-secondary dark:text-slate-600 mx-auto mb-3" />
-                    <p className="text-text-secondary dark:text-slate-400">No blood pressure readings yet.</p>
-                    <p className="text-text-secondary dark:text-slate-500 text-sm mt-1">Log your first reading to see trends.</p>
+                    <BloodPressureIcon className="w-10 h-10 text-text-secondary dark:text-slate-600 mx-auto mb-2" />
+                    <p className="text-text-secondary dark:text-slate-400 text-sm">No blood pressure readings yet.</p>
+                    <p className="text-text-secondary dark:text-slate-500 text-xs mt-1">Log your first reading to see trends.</p>
                   </div>
                 </div>
               )}
