@@ -1,6 +1,6 @@
 import React from 'react';
 import { GlucoseReading, Meal, Medication, LogEntry as LogEntryType, WeightReading, BloodPressureReading } from '../types';
-import { DropletIcon, ForkSpoonIcon, MicIcon, PencilIcon, PillIcon, CameraIcon, WeightScaleIcon, BloodPressureIcon, TrashIcon } from './Icons';
+import { DropletIcon, ForkSpoonIcon, MicIcon, PencilIcon, PillIcon, CameraIcon, WeightScaleIcon, BloodPressureIcon, TrashIcon, KeyboardIcon } from './Icons';
 
 interface LogEntryProps {
   log: LogEntryType;
@@ -38,10 +38,10 @@ const GlucoseEntry: React.FC<{ log: GlucoseReading }> = ({ log }) => {
             {status.status}
           </span>
         )}
+        {log.source === 'voice' && <MicIcon className="w-4 h-4 text-info dark:text-info" />}
+        {log.source === 'manual' && <KeyboardIcon className="w-4 h-4 text-info dark:text-info" />}
+        {log.source === 'photo_analysis' && <CameraIcon className="w-4 h-4 text-info dark:text-info" />}
       </div>
-      {log.source === 'voice' && <MicIcon className="w-4 h-4 text-info dark:text-info" />}
-      {log.source === 'manual' && <PencilIcon className="w-4 h-4 text-info dark:text-info" />}
-      {log.source === 'photo_analysis' && <CameraIcon className="w-4 h-4 text-info dark:text-info" />}
     </div>
   );
 };
@@ -53,7 +53,13 @@ const MealEntry: React.FC<{ log: Meal }> = ({ log }) => {
         <ForkSpoonIcon className="w-5 h-5 text-success dark:text-primary" />
       </div>
       <div className="flex-1">
-        <p className="font-semibold text-text-primary dark:text-slate-100 capitalize text-sm">{log.mealType}</p>
+        <div className="flex items-center gap-2">
+          <p className="font-semibold text-text-primary dark:text-slate-100 capitalize text-sm">{log.mealType}</p>
+          {/* Source indicators */}
+          {log.source === 'voice' && <span title="Logged by voice"><MicIcon className="w-4 h-4 text-success dark:text-success" /></span>}
+          {log.source === 'manual' && <span title="Logged manually"><KeyboardIcon className="w-4 h-4 text-success dark:text-success" /></span>}
+          {log.source === 'photo_analysis' && <span title="Analyzed from photo"><CameraIcon className="w-4 h-4 text-success dark:text-success" /></span>}
+        </div>
         <p className="text-xs text-text-secondary dark:text-slate-400">
           {log.foodItems && log.foodItems.length > 0
             ? log.foodItems.map(item => item.name).join(', ')
@@ -64,10 +70,6 @@ const MealEntry: React.FC<{ log: Meal }> = ({ log }) => {
           <span className="font-medium ml-1">{log.totalNutrition?.calories || 0}</span> cal
         </p>
       </div>
-      {/* Source indicators */}
-      {log.source === 'voice' && <span title="Logged by voice"><MicIcon className="w-4 h-4 text-primary dark:text-primary self-center" /></span>}
-      {log.source === 'manual' && <span title="Logged manually"><PencilIcon className="w-4 h-4 text-primary dark:text-primary self-center" /></span>}
-      {log.source === 'photo_analysis' && <span title="Analyzed from photo"><CameraIcon className="w-4 h-4 text-primary dark:text-primary self-center" /></span>}
     </div>
   );
 };
@@ -79,11 +81,13 @@ const MedicationEntry: React.FC<{ log: Medication }> = ({ log }) => {
         <PillIcon className="w-5 h-5 text-accent-purple dark:text-accent-purple" />
       </div>
       <div className="flex-1">
-        <p className="font-semibold text-text-primary dark:text-slate-100 text-sm">{log.name}</p>
+        <div className="flex items-center gap-2">
+          <p className="font-semibold text-text-primary dark:text-slate-100 text-sm">{log.name}</p>
+          {log.source === 'voice' && <MicIcon className="w-4 h-4 text-accent-purple dark:text-accent-purple" />}
+          {log.source === 'manual' && <KeyboardIcon className="w-4 h-4 text-accent-purple dark:text-accent-purple" />}
+        </div>
         <p className="text-xs text-text-secondary dark:text-slate-400">{`${log.quantity} x ${log.dosage}${log.unit}`}</p>
       </div>
-       {log.source === 'voice' && <MicIcon className="w-4 h-4 text-accent-purple dark:text-accent-purple" />}
-      {log.source === 'manual' && <PencilIcon className="w-4 h-4 text-accent-purple dark:text-accent-purple" />}
     </div>
   );
 };
@@ -95,16 +99,18 @@ const WeightEntry: React.FC<{ log: WeightReading }> = ({ log }) => {
           <WeightScaleIcon className="w-5 h-5 text-warning" />
         </div>
         <div className="flex-1">
-          <p className="font-semibold text-text-primary dark:text-slate-100 text-sm">Weight Reading</p>
+          <div className="flex items-center gap-2">
+            <p className="font-semibold text-text-primary dark:text-slate-100 text-sm">Weight Reading</p>
+            {log.source === 'voice' && <MicIcon className="w-4 h-4 text-warning" />}
+            {log.source === 'manual' && <KeyboardIcon className="w-4 h-4 text-warning" />}
+            {log.source === 'photo_analysis' && <CameraIcon className="w-4 h-4 text-warning" />}
+          </div>
           <p className="text-xs text-text-secondary dark:text-slate-400">Logged {log.source === 'voice' ? 'by voice' : (log.source === 'photo_analysis' ? 'by photo' : 'manually')}</p>
         </div>
         <div className="flex items-baseline space-x-1">
           <p className="text-xl font-bold text-warning">{log.value}</p>
           <p className="text-xs text-text-secondary dark:text-slate-500">{log.unit}</p>
         </div>
-        {log.source === 'voice' && <MicIcon className="w-4 h-4 text-warning" />}
-        {log.source === 'manual' && <PencilIcon className="w-4 h-4 text-warning" />}
-        {log.source === 'photo_analysis' && <CameraIcon className="w-4 h-4 text-warning" />}
       </div>
     );
 };
@@ -130,7 +136,12 @@ const BloodPressureEntry: React.FC<{ log: BloodPressureReading }> = ({ log }) =>
             <BloodPressureIcon className="w-5 h-5 text-danger" />
         </div>
         <div className="flex-1">
-            <p className="font-semibold text-text-primary dark:text-slate-100 text-sm">Blood Pressure</p>
+            <div className="flex items-center gap-2">
+                <p className="font-semibold text-text-primary dark:text-slate-100 text-sm">Blood Pressure</p>
+                {log.source === 'voice' && <MicIcon className="w-4 h-4 text-danger" />}
+                {log.source === 'manual' && <KeyboardIcon className="w-4 h-4 text-danger" />}
+                {log.source === 'photo_analysis' && <CameraIcon className="w-4 h-4 text-danger" />}
+            </div>
             <p className="text-xs text-text-secondary dark:text-slate-400">Pulse: {log.pulse} bpm</p>
         </div>
         <div className="flex items-center space-x-2">
@@ -143,11 +154,6 @@ const BloodPressureEntry: React.FC<{ log: BloodPressureReading }> = ({ log }) =>
                     {status.status}
                 </span>
             )}
-        </div>
-        <div className="flex flex-col items-center justify-center pl-2 space-y-1">
-            {log.source === 'voice' && <MicIcon className="w-4 h-4 text-danger" />}
-            {log.source === 'manual' && <PencilIcon className="w-4 h-4 text-danger" />}
-            {log.source === 'photo_analysis' && <CameraIcon className="w-4 h-4 text-danger" />}
         </div>
         </div>
     );

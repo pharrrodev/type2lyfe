@@ -334,7 +334,7 @@ const MainApp: React.FC = () => {
     <div className="h-full flex flex-col bg-bg-light dark:bg-slate-900 text-text-primary dark:text-slate-100 font-sans">
       <Header />
 
-      <main className="flex-grow container mx-auto px-4 md:px-6 py-1.5 sm:py-4 overflow-hidden">
+      <main className="flex-grow container mx-auto px-4 md:px-6 py-1.5 sm:py-4 pb-20 sm:pb-24 overflow-y-auto">
         {isLoadingInitialData ? (
           <LoadingSpinner size="xl" fullScreen message="Loading your health data..." />
         ) : (
