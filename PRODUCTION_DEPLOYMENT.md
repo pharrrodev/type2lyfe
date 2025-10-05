@@ -94,8 +94,8 @@ Add these variables:
 
 | Key | Value | Notes |
 |-----|-------|-------|
-| `GEMINI_API_KEY` | `AIzaSyCBvXhe6V-e6hu6AUOv7X432gx7ZrjxZlQ` | Your Gemini API key |
-| `JWT_SECRET` | `08d6de2a82c1c04a218d85c535a12dd0acd589c410e89a9ef1cf3c5bdabb5115aedbfe3dcc0498e6650c03803b79d946e69928661f1abc374c718ef91a13983` | Your JWT secret |
+| `GEMINI_API_KEY` | `[YOUR_GEMINI_API_KEY]` | Get from Google AI Studio |
+| `JWT_SECRET` | `[YOUR_JWT_SECRET]` | Generate with: `node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"` |
 | `FRONTEND_URL` | `https://type2lyfe.vercel.app` | Will update after frontend deploy |
 | `DATABASE_URL` | `[Internal Database URL from Step 1.3]` | From Render database |
 | `NODE_ENV` | `production` | Production mode |
