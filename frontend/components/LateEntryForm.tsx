@@ -47,13 +47,21 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
     // --- General State ---
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const [isListening, setIsListening] = useState(false);
+    const [currentTranscript, setCurrentTranscript] = useState('');
     const mealFileInputRef = useRef<HTMLInputElement>(null);
     const glucoseFileInputRef = useRef<HTMLInputElement>(null);
     const weightFileInputRef = useRef<HTMLInputElement>(null);
     const bpFileInputRef = useRef<HTMLInputElement>(null);
+    const listeningForRef = useRef<LogType | null>(null);
+    const sessionRef = useRef<any | null>(null);
+    const inputAudioContextRef = useRef<AudioContext | null>(null);
+    const scriptProcessorRef = useRef<ScriptProcessorNode | null>(null);
+    const streamRef = useRef<MediaStream | null>(null);
 
     // --- Glucose states ---
     const [glucoseLogMode, setGlucoseLogMode] = useState<'manual' | 'photo'>('photo');
+    const [glucoseVoiceStep, setGlucoseVoiceStep] = useState<'say_reading' | 'confirm'>('say_reading');
     const [glucoseParsedData, setGlucoseParsedData] = useState<{ value: number; context: string } | null>(null);
     const [manualGlucoseValue, setManualGlucoseValue] = useState('');
     const [manualGlucoseContext, setManualGlucoseContext] = useState<GlucoseReading['context']>('random');
@@ -70,6 +78,8 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
     const [analysisResult, setAnalysisResult] = useState<{ items: FoodItem[], total: { calories: number; protein: number; carbs: number; fat: number; sugar: number } } | null>(null);
     
     // --- Medication states ---
+    const [medVoiceStep, setMedVoiceStep] = useState<'say_medication' | 'confirm'>('say_medication');
+    const [medData, setMedData] = useState<{ med: UserMedication | null, quantity: number, transcript: string }>({ med: null, quantity: 0, transcript: '' });
     const [selectedMedId, setSelectedMedId] = useState<string>('');
     const [medQuantity, setMedQuantity] = useState(1);
 
@@ -83,6 +93,7 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
 
     // --- Weight states ---
     const [weightLogMode, setWeightLogMode] = useState<'manual' | 'photo'>('photo');
+    const [weightVoiceStep, setWeightVoiceStep] = useState<'say_reading' | 'confirm'>('say_reading');
     const [weightParsedData, setWeightParsedData] = useState<{ value: number; unit: 'kg' | 'lbs' } | null>(null);
     const [manualWeightValue, setManualWeightValue] = useState('');
     const [manualWeightUnit, setManualWeightUnit] = useState<'kg' | 'lbs'>('kg');
@@ -92,6 +103,7 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
     
     // --- Blood Pressure states ---
     const [bpLogMode, setBpLogMode] = useState<'manual' | 'photo'>('manual');
+    const [bpVoiceStep, setBpVoiceStep] = useState<'say_reading' | 'confirm'>('say_reading');
     const [bpParsedData, setBpParsedData] = useState<{ systolic: number; diastolic: number; pulse: number } | null>(null);
     const [manualSystolic, setManualSystolic] = useState('');
     const [manualDiastolic, setManualDiastolic] = useState('');
