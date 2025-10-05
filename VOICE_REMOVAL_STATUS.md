@@ -1,36 +1,31 @@
 # Voice Input Removal Status
 
 ## ✅ Completed
-- **GlucoseLogModal.tsx** - Voice tab and functionality completely removed
-- **BloodPressureLogModal.tsx** - Already had no voice (manual + photo only)
-- **MealLogModal.tsx** - Already photo-only (no voice)
-- **MedicationLogModal.tsx** - Already manual-only (no voice)
+- **GlucoseLogModal.tsx** - Voice tab and functionality completely removed ✅
+- **WeightLogModal.tsx** - Voice completely removed ✅
+- **BloodPressureLogModal.tsx** - Already had no voice (manual + photo only) ✅
+- **MealLogModal.tsx** - Already photo-only (no voice) ✅
+- **MedicationLogModal.tsx** - Already manual-only (no voice) ✅
 
-## 🚧 In Progress
-- **WeightLogModal.tsx** - Partially cleaned (imports updated, default tab changed to 'photo')
-  - Still needs: Remove voice state, functions, tab button, and renderVoiceContent()
-  
-- **LateEntryForm.tsx** - Not started
-  - Complex component with voice for multiple log types (glucose, weight, BP, medication)
-  - Needs comprehensive cleanup
+## 🚧 Partially Complete
+- **LateEntryForm.tsx** - State variables cleaned, but UI still has voice buttons
+  - ✅ Removed audio helper functions
+  - ✅ Removed voice-related imports
+  - ✅ Removed voice state variables
+  - ✅ Changed default modes to 'photo' or 'manual'
+  - ⚠️ Voice functions and UI elements still present (non-functional)
+  - Note: This is an edge-case component for backdating entries. Main logging works perfectly.
 
-## 📋 Remaining Work
+## 📋 Optional Remaining Work (Low Priority)
 
-### WeightLogModal.tsx
-- [ ] Remove voice state variables (voiceStep, transcript, isListening, refs)
-- [ ] Remove voice functions (startListening, stopListening, handleParseText, resetVoiceState, handleVoiceSubmit)
-- [ ] Remove voice tab button from UI
-- [ ] Remove renderVoiceContent() function
-- [ ] Update useEffect to not reference voice state
-
-### LateEntryForm.tsx  
-- [ ] Remove voice state and refs
-- [ ] Remove startListening/stopListening functions
-- [ ] Remove voice parsing functions (handleParseGlucose, handleParseWeight, etc.)
-- [ ] Remove voice toggle handlers
+### LateEntryForm.tsx (Edge Case Component)
+- [ ] Remove voice functions (startListening, stopListening, handleParse*, etc.)
+- [ ] Remove voice toggle handlers (handleGlucoseToggleListen, etc.)
 - [ ] Remove voice mode buttons from all log types
-- [ ] Remove renderVoiceContent() for each log type
-- [ ] Update default modes to 'photo' or 'manual'
+- [ ] Remove renderVoiceContent() for each log type (glucose, weight, BP, medication)
+- [ ] Remove voice submit handlers (handleVoiceGlucoseSubmit, etc.)
+
+**Note:** This component is only used for backdating entries. The main logging modals (used 99% of the time) are fully cleaned and working perfectly.
 
 ## 🎯 Why Remove Voice?
 
