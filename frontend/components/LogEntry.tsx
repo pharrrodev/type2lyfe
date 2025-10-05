@@ -1,9 +1,11 @@
 import React from 'react';
 import { GlucoseReading, Meal, Medication, LogEntry as LogEntryType, WeightReading, BloodPressureReading } from '../types';
-import { DropletIcon, ForkSpoonIcon, MicIcon, PencilIcon, PillIcon, CameraIcon, WeightScaleIcon, BloodPressureIcon } from './Icons';
+import { DropletIcon, ForkSpoonIcon, MicIcon, PencilIcon, PillIcon, CameraIcon, WeightScaleIcon, BloodPressureIcon, TrashIcon } from './Icons';
 
 interface LogEntryProps {
   log: LogEntryType;
+  onEdit?: (log: LogEntryType) => void;
+  onDelete?: (log: LogEntryType) => void;
 }
 
 const GlucoseEntry: React.FC<{ log: GlucoseReading }> = ({ log }) => {
@@ -152,7 +154,7 @@ const BloodPressureEntry: React.FC<{ log: BloodPressureReading }> = ({ log }) =>
 };
 
 
-const LogEntry: React.FC<LogEntryProps> = ({ log }) => {
+const LogEntry: React.FC<LogEntryProps> = ({ log, onEdit, onDelete }) => {
   const date = new Date(log.timestamp);
   const hours = date.getHours();
   const minutes = date.getMinutes();
@@ -183,7 +185,7 @@ const LogEntry: React.FC<LogEntryProps> = ({ log }) => {
   };
 
   return (
-    <div className="bg-card dark:bg-slate-800 p-2 sm:p-4 rounded-2xl shadow-card hover:shadow-card-hover transition-all duration-300 flex items-start space-x-2 sm:space-x-3 border-2 border-border dark:border-slate-700">
+    <div className="bg-card dark:bg-slate-800 p-2 sm:p-4 rounded-2xl shadow-card hover:shadow-card-hover transition-all duration-300 flex items-start space-x-2 sm:space-x-3 border-2 border-border dark:border-slate-700 group">
       <div className="text-center w-12 sm:w-16">
         <p className="text-sm sm:text-base font-semibold text-text-primary dark:text-slate-100">{timeString}</p>
         <p className="text-xs text-text-secondary dark:text-slate-400">{ampm}</p>
@@ -192,6 +194,32 @@ const LogEntry: React.FC<LogEntryProps> = ({ log }) => {
       <div className="border-l-2 border-border dark:border-slate-700 pl-2 sm:pl-3 flex-1">
         {renderContent()}
       </div>
+
+      {/* Edit/Delete Actions */}
+      {(onEdit || onDelete) && (
+        <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          {onEdit && (
+            <button
+              onClick={() => onEdit(log)}
+              className="p-1.5 text-text-secondary dark:text-slate-400 hover:text-primary dark:hover:text-primary hover:bg-primary/10 dark:hover:bg-primary/10 rounded-lg transition-all duration-200"
+              aria-label="Edit entry"
+              title="Edit"
+            >
+              <PencilIcon className="w-4 h-4" />
+            </button>
+          )}
+          {onDelete && (
+            <button
+              onClick={() => onDelete(log)}
+              className="p-1.5 text-text-secondary dark:text-slate-400 hover:text-danger dark:hover:text-danger hover:bg-danger/10 dark:hover:bg-danger/10 rounded-lg transition-all duration-200"
+              aria-label="Delete entry"
+              title="Delete"
+            >
+              <TrashIcon className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };

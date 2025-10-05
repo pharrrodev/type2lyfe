@@ -7,9 +7,11 @@ import EmptyState from './EmptyState';
 interface ActivityPageProps {
   logs: LogEntryType[];
   onOpenActionSheet?: () => void;
+  onEdit?: (log: LogEntryType) => void;
+  onDelete?: (log: LogEntryType) => void;
 }
 
-const ActivityPage: React.FC<ActivityPageProps> = ({ logs, onOpenActionSheet }) => {
+const ActivityPage: React.FC<ActivityPageProps> = ({ logs, onOpenActionSheet, onEdit, onDelete }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
 
@@ -51,7 +53,12 @@ const ActivityPage: React.FC<ActivityPageProps> = ({ logs, onOpenActionSheet }) 
       <div className="flex-grow flex flex-col gap-0.5 sm:gap-1 overflow-hidden">
         {currentLogs.length > 0 ? (
           currentLogs.map(log => (
-            <LogEntry key={`${log.type}-${log.id}`} log={log} />
+            <LogEntry
+              key={`${log.type}-${log.id}`}
+              log={log}
+              onEdit={onEdit}
+              onDelete={onDelete}
+            />
           ))
         ) : (
           <div className="h-full">

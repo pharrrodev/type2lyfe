@@ -70,3 +70,44 @@ exports.createWeightLog = createLogOfType('weight');
 // Blood Pressure Logs
 exports.getBloodPressureLogs = getLogsOfType('blood_pressure');
 exports.createBloodPressureLog = createLogOfType('blood_pressure');
+
+// @desc    Update a log
+// @route   PUT /logs/:type/:id
+// @access  Private
+exports.updateLog = async (req, res) => {
+  const { id } = req.params;
+  const { timestamp, ...data } = req.body;
+
+  try {
+    const updatedLog = await Log.update(id, req.user.id, timestamp, data);
+
+    if (!updatedLog) {
+      return res.status(404).json({ msg: 'Log not found' });
+    }
+
+    res.json(updatedLog);
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send('Server error');
+  }
+};
+
+// @desc    Delete a log
+// @route   DELETE /logs/:type/:id
+// @access  Private
+exports.deleteLog = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const deleted = await Log.delete(id, req.user.id);
+
+    if (!deleted) {
+      return res.status(404).json({ msg: 'Log not found' });
+    }
+
+    res.json({ msg: 'Log deleted successfully' });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send('Server error');
+  }
+};

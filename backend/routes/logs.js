@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
-const { getLogs, createLog, getGlucoseLogs, createGlucoseLog, getMealLogs, createMealLog, getMedicationLogs, createMedicationLog, getWeightLogs, createWeightLog, getBloodPressureLogs, createBloodPressureLog } = require('../controllers/logController');
+const { getLogs, createLog, getGlucoseLogs, createGlucoseLog, getMealLogs, createMealLog, getMedicationLogs, createMedicationLog, getWeightLogs, createWeightLog, getBloodPressureLogs, createBloodPressureLog, updateLog, deleteLog } = require('../controllers/logController');
 
 // @route   GET /logs
 // @desc    Get all logs for a user
@@ -62,5 +62,15 @@ router.get('/blood-pressure', auth, getBloodPressureLogs);
 // @desc    Create a new blood pressure log
 // @access  Private
 router.post('/blood-pressure', auth, createBloodPressureLog);
+
+// @route   PUT /logs/:type/:id
+// @desc    Update a log
+// @access  Private
+router.put('/:type/:id', auth, updateLog);
+
+// @route   DELETE /logs/:type/:id
+// @desc    Delete a log
+// @access  Private
+router.delete('/:type/:id', auth, deleteLog);
 
 module.exports = router;
