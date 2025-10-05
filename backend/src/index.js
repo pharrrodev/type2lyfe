@@ -11,9 +11,26 @@ const port = process.env.PORT || 3000;
 // Security headers
 app.use(helmet());
 
-// CORS configuration - only allow requests from your frontend
+// CORS configuration - allow requests from frontend
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:3001',
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    // List of allowed origins
+    const allowedOrigins = [
+      'http://localhost:3001',
+      'http://localhost:3000',
+      process.env.FRONTEND_URL,
+    ];
+
+    // Check if origin is in allowed list OR is a Vercel preview deployment
+    if (allowedOrigins.includes(origin) || origin.includes('vercel.app')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   optionsSuccessStatus: 200
 };
