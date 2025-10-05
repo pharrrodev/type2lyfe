@@ -70,6 +70,7 @@ app.use('/api/auth', authLimiter, require('../routes/auth')); // Apply stricter 
 app.use('/api/logs', require('../routes/logs'));
 app.use('/api/medications', require('../routes/medications'));
 app.use('/api/analyze', require('../routes/analyze'));
+app.use('/api/voice', require('../routes/voice'));
 
 // Health check endpoint
 app.get('/health', (req, res) => {
