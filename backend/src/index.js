@@ -4,9 +4,13 @@ const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
+const db = require('../models/db');
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+// Trust proxy - required for Render and other hosting platforms
+app.set('trust proxy', 1);
 
 // Security headers
 app.use(helmet());
@@ -80,10 +84,72 @@ app.get('/', (req, res) => {
   res.send('PharrroHealth Backend is running!');
 });
 
-app.listen(port, '0.0.0.0', () => {
-  console.log(`Server is running on port ${port}`);
-  console.log(`Server accessible at http://localhost:${port}`);
-  console.log(`Server accessible at http://0.0.0.0:${port}`);
-}).on('error', (err) => {
-  console.error('Server failed to start:', err);
-});
+// Initialize database tables
+const initializeDatabase = async () => {
+  const client = await db.getClient();
+  try {
+    console.log('🔄 Initializing database tables...');
+    await client.query('BEGIN');
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(255) UNIQUE NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS logs (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        timestamp TIMESTAMPTZ NOT NULL,
+        type VARCHAR(50) NOT NULL,
+        data JSONB NOT NULL
+      );
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS user_medications (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        name VARCHAR(255) NOT NULL,
+        dosage VARCHAR(255),
+        unit VARCHAR(50)
+      );
+    `);
+
+    // Create indexes
+    await client.query('CREATE INDEX IF NOT EXISTS idx_logs_user_id ON logs(user_id);');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_logs_timestamp ON logs(timestamp);');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_logs_type ON logs(type);');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_user_medications_user_id ON user_medications(user_id);');
+
+    await client.query('COMMIT');
+    console.log('✅ Database tables initialized successfully!');
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('❌ Error initializing database:', err.stack);
+    throw err;
+  } finally {
+    client.release();
+  }
+};
+
+// Start server after database initialization
+initializeDatabase()
+  .then(() => {
+    app.listen(port, '0.0.0.0', () => {
+      console.log(`✅ Server is running on port ${port}`);
+      console.log(`🌐 Server accessible at http://localhost:${port}`);
+      console.log(`🌐 Server accessible at http://0.0.0.0:${port}`);
+    }).on('error', (err) => {
+      console.error('❌ Server failed to start:', err);
+    });
+  })
+  .catch((err) => {
+    console.error('❌ Failed to initialize database, server not started:', err);
+    process.exit(1);
+  });
