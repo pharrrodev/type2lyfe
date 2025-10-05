@@ -39,9 +39,9 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
   };
 
   return (
-    <div className="h-full flex flex-col overflow-y-auto p-1.5 sm:p-4">
+    <div className="h-full flex flex-col">
       <div className="max-w-4xl mx-auto w-full">
-        <h1 className="text-lg sm:text-2xl font-bold text-text-primary dark:text-slate-100 mb-2 sm:mb-4">Settings</h1>
+        <h1 className="text-lg sm:text-2xl font-bold text-text-primary dark:text-slate-100 mb-2 sm:mb-4 mt-2 sm:mt-0">Settings</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4 pb-2">
           {/* Preferences Section */}

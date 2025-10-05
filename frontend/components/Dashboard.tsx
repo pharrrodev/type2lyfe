@@ -108,7 +108,7 @@ const Dashboard: React.FC<DashboardProps> = ({ glucoseReadings, weightReadings, 
   }
 
   return (
-    <div className="h-full flex flex-col space-y-2">
+    <div className="h-full flex flex-col space-y-2 mt-2 sm:mt-0">
       {/* Stats Grid - Always Visible */}
       <StatsGrid
         readings={glucoseReadings}
