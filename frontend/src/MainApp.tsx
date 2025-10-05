@@ -20,6 +20,8 @@ import ActionBottomSheet from '../components/ActionBottomSheet';
 import ToastContainer from '../components/ToastContainer';
 import { useToast } from '../hooks/useToast';
 import LoadingSpinner from '../components/LoadingSpinner';
+import ConfirmDialog from '../components/ConfirmDialog';
+import { useConfirm } from '../hooks/useConfirm';
 
 export type Page = 'dashboard' | 'activity' | 'history' | 'settings';
 
@@ -44,11 +46,17 @@ const MainApp: React.FC = () => {
   const [weightUnit, setWeightUnit] = useState<'kg' | 'lbs'>('kg');
   const [activePage, setActivePage] = useState<Page>('dashboard');
 
+  // Edit state - stores the log being edited
+  const [editingLog, setEditingLog] = useState<LogEntryType | null>(null);
+
   // Loading states
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
 
   // Toast notifications
   const { toasts, removeToast, success, error, info } = useToast();
+
+  // Confirmation dialog
+  const { isOpen: isConfirmOpen, options: confirmOptions, confirm, handleConfirm, handleCancel } = useConfirm();
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -201,6 +209,70 @@ const MainApp: React.FC = () => {
     }
   }, [success, error]);
 
+  // Handle editing a log entry
+  const handleEditLog = useCallback((log: LogEntryType) => {
+    setEditingLog(log);
+    // Open the appropriate modal based on log type
+    switch (log.type) {
+      case 'glucose':
+        setIsGlucoseModalOpen(true);
+        break;
+      case 'meal':
+        setIsMealModalOpen(true);
+        break;
+      case 'medication':
+        setIsMedicationModalOpen(true);
+        break;
+      case 'weight':
+        setIsWeightModalOpen(true);
+        break;
+      case 'blood_pressure':
+        setIsBloodPressureModalOpen(true);
+        break;
+    }
+  }, []);
+
+  // Handle deleting a log entry
+  const handleDeleteLog = useCallback(async (log: LogEntryType) => {
+    const confirmed = await confirm({
+      title: 'Delete Entry',
+      message: `Are you sure you want to delete this ${log.type.replace('_', ' ')} entry? This action cannot be undone.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      variant: 'danger'
+    });
+
+    if (!confirmed) return;
+
+    try {
+      await api.delete(`/logs/${log.type}/${log.id}`);
+
+      // Update the appropriate state based on log type
+      switch (log.type) {
+        case 'glucose':
+          setGlucoseReadings(prev => prev.filter(r => r.id !== log.id));
+          break;
+        case 'meal':
+          setMeals(prev => prev.filter(m => m.id !== log.id));
+          break;
+        case 'medication':
+          setMedications(prev => prev.filter(m => m.id !== log.id));
+          break;
+        case 'weight':
+          setWeightReadings(prev => prev.filter(r => r.id !== log.id));
+          break;
+        case 'blood_pressure':
+          setBloodPressureReadings(prev => prev.filter(r => r.id !== log.id));
+          break;
+      }
+
+      success('Entry deleted successfully!');
+    } catch (err) {
+      console.error('Failed to delete log:', err);
+      error('Failed to delete entry. Please try again.');
+    }
+  }, [confirm, success, error]);
+
 
   const combinedLogs: LogEntryType[] = useMemo(() => {
     return [
@@ -223,7 +295,12 @@ const MainApp: React.FC = () => {
                     onOpenActionSheet={() => setIsActionSheetOpen(true)}
                 />;
       case 'activity':
-        return <ActivityPage logs={combinedLogs} onOpenActionSheet={() => setIsActionSheetOpen(true)} />;
+        return <ActivityPage
+          logs={combinedLogs}
+          onOpenActionSheet={() => setIsActionSheetOpen(true)}
+          onEdit={handleEditLog}
+          onDelete={handleDeleteLog}
+        />;
       case 'history':
         return <HistoryPage
                     onAddGlucose={addGlucoseReading}
@@ -292,9 +369,13 @@ const MainApp: React.FC = () => {
       {isGlucoseModalOpen && (
         <GlucoseLogModal
           isOpen={isGlucoseModalOpen}
-          onClose={() => setIsGlucoseModalOpen(false)}
+          onClose={() => {
+            setIsGlucoseModalOpen(false);
+            setEditingLog(null);
+          }}
           onAddReading={addGlucoseReading}
           unit={glucoseUnit}
+          editingLog={editingLog?.type === 'glucose' ? editingLog as GlucoseReading : null}
         />
       )}
       {isMealModalOpen && (
@@ -338,6 +419,18 @@ const MainApp: React.FC = () => {
 
       {/* Toast Notifications */}
       <ToastContainer toasts={toasts} onClose={removeToast} />
+
+      {/* Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={isConfirmOpen}
+        onClose={handleCancel}
+        onConfirm={handleConfirm}
+        title={confirmOptions.title}
+        message={confirmOptions.message}
+        confirmText={confirmOptions.confirmText}
+        cancelText={confirmOptions.cancelText}
+        variant={confirmOptions.variant}
+      />
     </div>
   );
 };

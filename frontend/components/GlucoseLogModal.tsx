@@ -12,6 +12,7 @@ interface GlucoseLogModalProps {
   onAddReading: (reading: Omit<GlucoseReading, 'id'>) => void;
   unit: 'mg/dL' | 'mmol/L';
   customTimestamp?: Date; // Optional: for late entries
+  editingLog?: GlucoseReading | null; // Optional: for editing existing entries
 }
 
 // --- Audio Helper Functions ---
