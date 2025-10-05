@@ -5,14 +5,14 @@ node_modules/
 # Environment Variables (NEVER COMMIT THESE!)
 .env
 .env.local
-.env.production
 .env.development
-*.env
 backend/.env
 backend/.env.local
 backend/.env.production
+backend/.env.development
 frontend/.env.local
-frontend/.env.production
+frontend/.env.development
+# Note: frontend/.env.production is committed for Vercel deployment
 
 # Build Outputs
 dist/

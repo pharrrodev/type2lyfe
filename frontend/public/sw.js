@@ -1,7 +1,7 @@
 // Service Worker for Type2Lyfe PWA
 // Provides offline support and caching
 
-const CACHE_NAME = 'type2lyfe-v1';
+const CACHE_NAME = 'type2lyfe-v2';
 const urlsToCache = [
   '/',
   '/index.html',

@@ -50,6 +50,15 @@ app.use('/api/logs', require('../routes/logs'));
 app.use('/api/medications', require('../routes/medications'));
 app.use('/api/analyze', require('../routes/analyze'));
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
 app.get('/', (req, res) => {
   res.send('PharrroHealth Backend is running!');
 });

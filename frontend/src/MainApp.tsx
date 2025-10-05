@@ -65,12 +65,12 @@ const MainApp: React.FC = () => {
         setIsLoadingInitialData(true);
         console.log('🔄 Fetching initial data...');
         const [glucoseRes, mealsRes, medicationsRes, weightRes, bloodPressureRes, userMedicationsRes] = await Promise.all([
-          api.get('/logs/glucose'),
-          api.get('/logs/meals'),
-          api.get('/logs/medications'),
-          api.get('/logs/weight'),
-          api.get('/logs/blood-pressure'),
-          api.get('/medications')
+          api.get('/api/logs/glucose'),
+          api.get('/api/logs/meals'),
+          api.get('/api/logs/medications'),
+          api.get('/api/logs/weight'),
+          api.get('/api/logs/blood-pressure'),
+          api.get('/api/medications')
         ]);
 
         console.log('📊 Initial data fetched:', {
@@ -102,7 +102,7 @@ const MainApp: React.FC = () => {
   const addGlucoseReading = useCallback(async (reading: Omit<GlucoseReading, 'id'>) => {
     try {
       console.log('📝 Adding glucose reading:', reading);
-      const response = await api.post('/logs/glucose', reading);
+      const response = await api.post('/api/logs/glucose', reading);
       console.log('✅ Glucose reading added:', response.data);
 
       // Backend already returns flattened data: { id, timestamp, value, context, ... }
@@ -123,7 +123,7 @@ const MainApp: React.FC = () => {
   const addMeal = useCallback(async (meal: Omit<Meal, 'id'>) => {
     try {
       console.log('🍽️ Adding meal:', meal);
-      const response = await api.post('/logs/meals', meal);
+      const response = await api.post('/api/logs/meals', meal);
       console.log('✅ Meal added:', response.data);
       setMeals(prev => {
         const updated = [...prev, response.data].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
@@ -142,7 +142,7 @@ const MainApp: React.FC = () => {
   const addMedication = useCallback(async (medication: Omit<Medication, 'id'>) => {
     try {
       console.log('💊 Adding medication:', medication);
-      const response = await api.post('/logs/medications', medication);
+      const response = await api.post('/api/logs/medications', medication);
       console.log('✅ Medication added:', response.data);
 
       // Backend already returns flattened data: { id, timestamp, name, dosage, ... }
@@ -162,7 +162,7 @@ const MainApp: React.FC = () => {
 
   const addWeightReading = useCallback(async (reading: Omit<WeightReading, 'id'>) => {
     try {
-      const response = await api.post('/logs/weight', reading);
+      const response = await api.post('/api/logs/weight', reading);
       setWeightReadings(prev => [...prev, response.data].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
       success('Weight logged successfully! ⚖️');
     } catch (err) {
@@ -173,7 +173,7 @@ const MainApp: React.FC = () => {
 
   const addBloodPressureReading = useCallback(async (reading: Omit<BloodPressureReading, 'id'>) => {
     try {
-      const response = await api.post('/logs/blood-pressure', reading);
+      const response = await api.post('/api/logs/blood-pressure', reading);
       setBloodPressureReadings(prev => [...prev, response.data].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
       success('Blood pressure logged successfully! 🫀');
     } catch (err) {
@@ -185,11 +185,11 @@ const MainApp: React.FC = () => {
   const saveUserMedication = useCallback(async (med: Omit<UserMedication, 'id'> & { id?: string }) => {
     try {
       if (med.id) {
-        const response = await api.put(`/medications/${med.id}`, med);
+        const response = await api.put(`/api/medications/${med.id}`, med);
         setUserMedications(prev => prev.map(m => m.id === med.id ? response.data : m));
         success('Medication updated successfully!');
       } else {
-        const response = await api.post('/medications', med);
+        const response = await api.post('/api/medications', med);
         setUserMedications(prev => [...prev, response.data]);
         success('Medication added successfully!');
       }
@@ -201,7 +201,7 @@ const MainApp: React.FC = () => {
 
   const deleteUserMedication = useCallback(async (id: string) => {
     try {
-      await api.delete(`/medications/${id}`);
+      await api.delete(`/api/medications/${id}`);
       setUserMedications(prev => prev.filter(m => m.id !== id));
       success('Medication deleted successfully!');
     } catch (err) {
@@ -246,7 +246,7 @@ const MainApp: React.FC = () => {
     if (!confirmed) return;
 
     try {
-      await api.delete(`/logs/${log.type}/${log.id}`);
+      await api.delete(`/api/logs/${log.type}/${log.id}`);
 
       // Update the appropriate state based on log type
       switch (log.type) {

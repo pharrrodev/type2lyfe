@@ -41,43 +41,43 @@ api.interceptors.response.use(
 export default api;
 
 export const register = (data: any) => {
-  return api.post('/auth/register', data);
+  return api.post('/api/auth/register', data);
 };
 
 export const login = (data: any) => {
-  return api.post('/auth/login', data);
+  return api.post('/api/auth/login', data);
 };
 
 export const analyzeGlucoseFromImage = (image: string, mimeType: string) => {
-  return api.post(`/analyze/glucose-from-image`, { image, mimeType });
+  return api.post(`/api/analyze/glucose-from-image`, { image, mimeType });
 };
 
 export const analyzeMealFromImage = (image: string, mimeType: string) => {
-  return api.post(`/analyze/meal-from-image`, { image, mimeType });
+  return api.post(`/api/analyze/meal-from-image`, { image, mimeType });
 };
 
 export const analyzeGlucoseFromText = (description: string) => {
-  return api.post(`/analyze/glucose-from-text`, { description });
+  return api.post(`/api/analyze/glucose-from-text`, { description });
 };
 
 export const analyzeWeightFromImage = (image: string, mimeType: string) => {
-  return api.post(`/analyze/weight-from-image`, { image, mimeType });
+  return api.post(`/api/analyze/weight-from-image`, { image, mimeType });
 };
 
 export const analyzeBpFromImage = (image: string, mimeType: string) => {
-  return api.post(`/analyze/bp-from-image`, { image, mimeType });
+  return api.post(`/api/analyze/bp-from-image`, { image, mimeType });
 };
 
 export const analyzeWeightFromText = (description: string) => {
-  return api.post(`/analyze/weight-from-text`, { description });
+  return api.post(`/api/analyze/weight-from-text`, { description });
 };
 
 export const analyzeBpFromText = (description: string) => {
-  return api.post(`/analyze/bp-from-text`, { description });
+  return api.post(`/api/analyze/bp-from-text`, { description });
 };
 
 export const analyzeMealFromText = (description: string) => {
-    return api.post(`/analyze/meal-from-text`, { description });
+    return api.post(`/api/analyze/meal-from-text`, { description });
 };
 
 export const parseLateEntry = (entry: string) => {
