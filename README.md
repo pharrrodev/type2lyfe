@@ -1,6 +1,7 @@
 # 🩺 Type2Lyfe
 
 > AI-powered health tracking application for people with Type 2 diabetes
+> Mobile-optimized Progressive Web App (PWA)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![React](https://img.shields.io/badge/React-18.x-61DAFB?logo=react)](https://reactjs.org/)
