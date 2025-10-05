@@ -12,11 +12,9 @@ import {
     analyzeMealFromText,
     parseMedicationFromText
 } from '../src/services/api';
-import { CalendarClockIcon, DropletIcon, ForkSpoonIcon, PillIcon, PencilIcon, CameraIcon, MicIcon, UploadIcon, WeightScaleIcon, BloodPressureIcon, SquareIcon } from './Icons';
+import { CalendarClockIcon, DropletIcon, ForkSpoonIcon, PillIcon, PencilIcon, CameraIcon, UploadIcon, WeightScaleIcon, BloodPressureIcon } from './Icons';
 import Spinner from './Spinner';
 import NutritionDisplay from './NutritionDisplay';
-// FIX: The 'LiveSession' type is not exported from '@google/genai'. It has been removed.
-import { GoogleGenAI, Modality, Blob } from '@google/genai';
 
 
 interface LateEntryFormProps {
@@ -28,29 +26,6 @@ interface LateEntryFormProps {
     userMedications: UserMedication[];
     unit: 'mg/dL' | 'mmol/L';
 }
-
-// --- Audio Helper Functions ---
-function encode(bytes: Uint8Array) {
-  let binary = '';
-  const len = bytes.byteLength;
-  for (let i = 0; i < len; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
-}
-
-function createBlob(data: Float32Array): Blob {
-  const l = data.length;
-  const int16 = new Int16Array(l);
-  for (let i = 0; i < l; i++) {
-    int16[i] = data[i] * 32768;
-  }
-  return {
-    data: encode(new Uint8Array(int16.buffer)),
-    mimeType: 'audio/pcm;rate=16000',
-  };
-}
-
 
 const formatToLocalDateTimeString = (date: Date): string => {
     const year = date.getFullYear();
@@ -72,25 +47,13 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
     // --- General State ---
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
-    const [isListening, setIsListening] = useState(false);
-    const [currentTranscript, setCurrentTranscript] = useState('');
     const mealFileInputRef = useRef<HTMLInputElement>(null);
     const glucoseFileInputRef = useRef<HTMLInputElement>(null);
     const weightFileInputRef = useRef<HTMLInputElement>(null);
     const bpFileInputRef = useRef<HTMLInputElement>(null);
-    const listeningForRef = useRef<LogType | null>(null);
-
-    // Real-time audio state
-    // FIX: Use 'any' for the session ref type as a workaround for the removed 'LiveSession' export from the SDK.
-    const sessionRef = useRef<any | null>(null);
-    const inputAudioContextRef = useRef<AudioContext | null>(null);
-    const scriptProcessorRef = useRef<ScriptProcessorNode | null>(null);
-    const streamRef = useRef<MediaStream | null>(null);
-    const aiRef = useRef<GoogleGenAI | null>(null);
 
     // --- Glucose states ---
-    const [glucoseLogMode, setGlucoseLogMode] = useState<'voice' | 'manual' | 'photo'>('voice');
-    const [glucoseVoiceStep, setGlucoseVoiceStep] = useState<'say_reading' | 'confirm'>('say_reading');
+    const [glucoseLogMode, setGlucoseLogMode] = useState<'manual' | 'photo'>('photo');
     const [glucoseParsedData, setGlucoseParsedData] = useState<{ value: number; context: string } | null>(null);
     const [manualGlucoseValue, setManualGlucoseValue] = useState('');
     const [manualGlucoseContext, setManualGlucoseContext] = useState<GlucoseReading['context']>('random');
@@ -107,9 +70,6 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
     const [analysisResult, setAnalysisResult] = useState<{ items: FoodItem[], total: { calories: number; protein: number; carbs: number; fat: number; sugar: number } } | null>(null);
     
     // --- Medication states ---
-    const [medLogMode, setMedLogMode] = useState<'voice' | 'manual'>('voice');
-    const [medVoiceStep, setMedVoiceStep] = useState<'say_medication' | 'confirm'>('say_medication');
-    const [medData, setMedData] = useState<{ med: UserMedication | null, quantity: number, transcript: string }>({ med: null, quantity: 0, transcript: '' });
     const [selectedMedId, setSelectedMedId] = useState<string>('');
     const [medQuantity, setMedQuantity] = useState(1);
 
@@ -122,8 +82,7 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
     }, [userMedications, selectedMedId]);
 
     // --- Weight states ---
-    const [weightLogMode, setWeightLogMode] = useState<'voice' | 'manual' | 'photo'>('voice');
-    const [weightVoiceStep, setWeightVoiceStep] = useState<'say_reading' | 'confirm'>('say_reading');
+    const [weightLogMode, setWeightLogMode] = useState<'manual' | 'photo'>('photo');
     const [weightParsedData, setWeightParsedData] = useState<{ value: number; unit: 'kg' | 'lbs' } | null>(null);
     const [manualWeightValue, setManualWeightValue] = useState('');
     const [manualWeightUnit, setManualWeightUnit] = useState<'kg' | 'lbs'>('kg');
@@ -132,8 +91,7 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
     const [weightPhotoStep, setWeightPhotoStep] = useState<'select_photo' | 'confirm'>('select_photo');
     
     // --- Blood Pressure states ---
-    const [bpLogMode, setBpLogMode] = useState<'voice' | 'manual' | 'photo'>('voice');
-    const [bpVoiceStep, setBpVoiceStep] = useState<'say_reading' | 'confirm'>('say_reading');
+    const [bpLogMode, setBpLogMode] = useState<'manual' | 'photo'>('manual');
     const [bpParsedData, setBpParsedData] = useState<{ systolic: number; diastolic: number; pulse: number } | null>(null);
     const [manualSystolic, setManualSystolic] = useState('');
     const [manualDiastolic, setManualDiastolic] = useState('');
