@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { GlucoseReading, WeightReading, BloodPressureReading } from '../types';
 import GlucoseChart from './GlucoseChart';
+import WeightChart from './WeightChart';
+import BloodPressureChart from './BloodPressureChart';
 import StatsGrid from './StatsGrid';
-import { PlusIcon, DropletIcon } from './Icons';
+import DateRangeFilter from './DateRangeFilter';
+import { PlusIcon, DropletIcon, WeightScaleIcon, BloodPressureIcon } from './Icons';
 import EmptyState from './EmptyState';
 
 interface DashboardProps {
@@ -10,11 +13,17 @@ interface DashboardProps {
   weightReadings: WeightReading[];
   bloodPressureReadings: BloodPressureReading[];
   unit: 'mg/dL' | 'mmol/L';
+  weightUnit: 'kg' | 'lbs';
   onOpenActionSheet?: () => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ glucoseReadings, weightReadings, bloodPressureReadings, unit, onOpenActionSheet }) => {
+const Dashboard: React.FC<DashboardProps> = ({ glucoseReadings, weightReadings, bloodPressureReadings, unit, weightUnit, onOpenActionSheet }) => {
   const hasAnyData = glucoseReadings.length > 0 || weightReadings.length > 0 || bloodPressureReadings.length > 0;
+
+  // Date range filters for each chart
+  const [glucoseDateRange, setGlucoseDateRange] = useState<number | null>(7);
+  const [weightDateRange, setWeightDateRange] = useState<number | null>(30);
+  const [bpDateRange, setBpDateRange] = useState<number | null>(30);
 
   if (!hasAnyData) {
     return (
@@ -76,16 +85,21 @@ const Dashboard: React.FC<DashboardProps> = ({ glucoseReadings, weightReadings, 
   }
 
   return (
-    <div className="h-full flex flex-col space-y-6">
+    <div className="h-full flex flex-col space-y-6 overflow-y-auto">
       <StatsGrid
         readings={glucoseReadings}
         weightReadings={weightReadings}
         bloodPressureReadings={bloodPressureReadings}
         unit={unit}
       />
-      <section className="bg-card dark:bg-slate-800 p-6 rounded-2xl shadow-card flex-grow flex flex-col border border-border dark:border-slate-700">
-        <h2 className="text-xl font-semibold text-text-primary dark:text-slate-100 mb-6 flex-shrink-0">Glucose Trends</h2>
-        <div className="flex-grow h-full w-full">
+
+      {/* Glucose Trends Chart */}
+      <section className="bg-card dark:bg-slate-800 p-6 rounded-2xl shadow-card flex flex-col border border-border dark:border-slate-700 min-h-[400px]">
+        <div className="flex justify-between items-center mb-4 flex-shrink-0">
+          <h2 className="text-xl font-semibold text-text-primary dark:text-slate-100">Glucose Trends</h2>
+          <DateRangeFilter selectedRange={glucoseDateRange} onRangeChange={setGlucoseDateRange} />
+        </div>
+        <div className="flex-grow h-full w-full min-h-[300px]">
           {glucoseReadings.length > 0 ? (
             <GlucoseChart data={glucoseReadings} unit={unit} />
           ) : (
@@ -93,6 +107,48 @@ const Dashboard: React.FC<DashboardProps> = ({ glucoseReadings, weightReadings, 
               <div>
                 <DropletIcon className="w-12 h-12 text-text-secondary dark:text-slate-600 mx-auto mb-3" />
                 <p className="text-text-secondary dark:text-slate-400">No glucose readings yet.</p>
+                <p className="text-text-secondary dark:text-slate-500 text-sm mt-1">Log your first reading to see trends.</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Weight Trends Chart */}
+      <section className="bg-card dark:bg-slate-800 p-6 rounded-2xl shadow-card flex flex-col border border-border dark:border-slate-700 min-h-[400px]">
+        <div className="flex justify-between items-center mb-4 flex-shrink-0">
+          <h2 className="text-xl font-semibold text-text-primary dark:text-slate-100">Weight Trends</h2>
+          <DateRangeFilter selectedRange={weightDateRange} onRangeChange={setWeightDateRange} />
+        </div>
+        <div className="flex-grow h-full w-full min-h-[300px]">
+          {weightReadings.length > 0 ? (
+            <WeightChart data={weightReadings} unit={weightUnit} dateRange={weightDateRange || undefined} />
+          ) : (
+            <div className="h-full flex items-center justify-center text-center">
+              <div>
+                <WeightScaleIcon className="w-12 h-12 text-text-secondary dark:text-slate-600 mx-auto mb-3" />
+                <p className="text-text-secondary dark:text-slate-400">No weight readings yet.</p>
+                <p className="text-text-secondary dark:text-slate-500 text-sm mt-1">Log your first weight to see trends.</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Blood Pressure Trends Chart */}
+      <section className="bg-card dark:bg-slate-800 p-6 rounded-2xl shadow-card flex flex-col border border-border dark:border-slate-700 min-h-[400px]">
+        <div className="flex justify-between items-center mb-4 flex-shrink-0">
+          <h2 className="text-xl font-semibold text-text-primary dark:text-slate-100">Blood Pressure Trends</h2>
+          <DateRangeFilter selectedRange={bpDateRange} onRangeChange={setBpDateRange} />
+        </div>
+        <div className="flex-grow h-full w-full min-h-[300px]">
+          {bloodPressureReadings.length > 0 ? (
+            <BloodPressureChart data={bloodPressureReadings} dateRange={bpDateRange || undefined} />
+          ) : (
+            <div className="h-full flex items-center justify-center text-center">
+              <div>
+                <BloodPressureIcon className="w-12 h-12 text-text-secondary dark:text-slate-600 mx-auto mb-3" />
+                <p className="text-text-secondary dark:text-slate-400">No blood pressure readings yet.</p>
                 <p className="text-text-secondary dark:text-slate-500 text-sm mt-1">Log your first reading to see trends.</p>
               </div>
             </div>

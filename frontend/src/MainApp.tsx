@@ -292,6 +292,7 @@ const MainApp: React.FC = () => {
                     weightReadings={weightReadings}
                     bloodPressureReadings={bloodPressureReadings}
                     unit={glucoseUnit}
+                    weightUnit={weightUnit}
                     onOpenActionSheet={() => setIsActionSheetOpen(true)}
                 />;
       case 'activity':
@@ -318,6 +319,11 @@ const MainApp: React.FC = () => {
                     weightUnit={weightUnit}
                     onWeightUnitChange={setWeightUnit}
                     onOpenMyMedications={() => setIsMyMedicationsModalOpen(true)}
+                    glucoseReadings={glucoseReadings}
+                    meals={meals}
+                    medications={medications}
+                    weightReadings={weightReadings}
+                    bloodPressureReadings={bloodPressureReadings}
                 />;
       default:
         return null;

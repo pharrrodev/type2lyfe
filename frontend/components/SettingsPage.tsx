@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DarkModeToggle from './DarkModeToggle';
+import ExportButton from './ExportButton';
 import { DropletIcon, WeightScaleIcon, XIcon, PillIcon } from './Icons';
+import { GlucoseReading, Meal, Medication, WeightReading, BloodPressureReading } from '../types';
 
 interface SettingsPageProps {
   glucoseUnit: 'mg/dL' | 'mmol/L';
@@ -9,9 +11,25 @@ interface SettingsPageProps {
   weightUnit: 'kg' | 'lbs';
   onWeightUnitChange: (unit: 'kg' | 'lbs') => void;
   onOpenMyMedications?: () => void;
+  glucoseReadings: GlucoseReading[];
+  meals: Meal[];
+  medications: Medication[];
+  weightReadings: WeightReading[];
+  bloodPressureReadings: BloodPressureReading[];
 }
 
-const SettingsPage: React.FC<SettingsPageProps> = ({ glucoseUnit, onGlucoseUnitChange, weightUnit, onWeightUnitChange, onOpenMyMedications }) => {
+const SettingsPage: React.FC<SettingsPageProps> = ({
+  glucoseUnit,
+  onGlucoseUnitChange,
+  weightUnit,
+  onWeightUnitChange,
+  onOpenMyMedications,
+  glucoseReadings,
+  meals,
+  medications,
+  weightReadings,
+  bloodPressureReadings
+}) => {
   const navigate = useNavigate();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
@@ -114,6 +132,17 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ glucoseUnit, onGlucoseUnitC
           {onOpenMyMedications && (
             <section className="bg-card dark:bg-slate-800 rounded-2xl shadow-card p-4 border border-border dark:border-slate-700 flex flex-col">
               <h2 className="text-lg font-semibold text-text-primary dark:text-slate-100 mb-3">Health Data</h2>
+
+              {/* Export Data */}
+              <div className="mb-3">
+                <ExportButton
+                  glucoseReadings={glucoseReadings}
+                  meals={meals}
+                  medications={medications}
+                  weightReadings={weightReadings}
+                  bloodPressureReadings={bloodPressureReadings}
+                />
+              </div>
 
               {/* My Medications */}
               <button
