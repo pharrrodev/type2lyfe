@@ -43,7 +43,7 @@ const Dashboard: React.FC<DashboardProps> = ({ glucoseReadings, weightReadings, 
     },
     {
       id: 'bp',
-      label: 'Blood Pressure',
+      label: 'BP',
       icon: <BloodPressureIcon className="w-5 h-5" />
     }
   ];

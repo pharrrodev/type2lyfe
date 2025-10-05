@@ -20,7 +20,7 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ tabs, activeTab, onTabCha
           key={tab.id}
           onClick={() => onTabChange(tab.id)}
           className={`
-            flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200
+            flex-1 flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2.5 rounded-lg font-medium text-xs sm:text-sm transition-all duration-200
             ${
               activeTab === tab.id
                 ? 'bg-primary text-white shadow-md'
@@ -28,8 +28,8 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ tabs, activeTab, onTabCha
             }
           `}
         >
-          {tab.icon && <span className="w-5 h-5">{tab.icon}</span>}
-          <span>{tab.label}</span>
+          {tab.icon && <span className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0">{tab.icon}</span>}
+          <span className="truncate">{tab.label}</span>
         </button>
       ))}
     </div>
