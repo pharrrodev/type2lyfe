@@ -1,12 +1,12 @@
-// Service Worker for Type2Lifestyles PWA
-// Provides basic offline support and caching
+// Service Worker for Type2Lyfe PWA
+// Provides offline support and caching
 
-const CACHE_NAME = 'type2lifestyles-v1';
+const CACHE_NAME = 'type2lyfe-v1';
 const urlsToCache = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/type2lifestyles-logo.png'
+  '/MAIN_LOGO.svg'
 ];
 
 // Install event - cache essential files

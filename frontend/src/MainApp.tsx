@@ -22,6 +22,7 @@ import { useToast } from '../hooks/useToast';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useConfirm } from '../hooks/useConfirm';
+import InstallPWA from '../components/InstallPWA';
 
 export type Page = 'dashboard' | 'activity' | 'history' | 'settings';
 
@@ -437,6 +438,9 @@ const MainApp: React.FC = () => {
         cancelText={confirmOptions.cancelText}
         variant={confirmOptions.variant}
       />
+
+      {/* PWA Install Prompt */}
+      <InstallPWA />
     </div>
   );
 };
