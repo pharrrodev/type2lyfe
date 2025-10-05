@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { WeightReading } from '../types';
 import { analyzeWeightFromText, analyzeWeightFromImage } from '../src/services/api';
-import { MicIcon, XIcon, PencilIcon, CameraIcon, UploadIcon, WeightScaleIcon, SquareIcon } from './Icons';
+import { XIcon, PencilIcon, CameraIcon, UploadIcon, WeightScaleIcon } from './Icons';
 import Spinner from './Spinner';
-import { GoogleGenAI, Modality, Blob } from '@google/genai';
 
 interface WeightLogModalProps {
   isOpen: boolean;
@@ -12,30 +11,8 @@ interface WeightLogModalProps {
   customTimestamp?: Date; // Optional: for late entries
 }
 
-// --- Audio Helper Functions ---
-function encode(bytes: Uint8Array) {
-  let binary = '';
-  const len = bytes.byteLength;
-  for (let i = 0; i < len; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
-}
-
-function createBlob(data: Float32Array): Blob {
-  const l = data.length;
-  const int16 = new Int16Array(l);
-  for (let i = 0; i < l; i++) {
-    int16[i] = data[i] * 32768;
-  }
-  return {
-    data: encode(new Uint8Array(int16.buffer)),
-    mimeType: 'audio/pcm;rate=16000',
-  };
-}
-
 const WeightLogModal: React.FC<WeightLogModalProps> = ({ isOpen, onClose, onAddReading, customTimestamp }) => {
-  const [activeTab, setActiveTab] = useState<'voice' | 'manual' | 'photo'>('voice');
+  const [activeTab, setActiveTab] = useState<'manual' | 'photo'>('photo');
   const [parsedData, setParsedData] = useState<{ value: number; unit: 'kg' | 'lbs' } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');

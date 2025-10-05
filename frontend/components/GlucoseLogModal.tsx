@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GlucoseReading } from '../types';
 import { analyzeGlucoseFromText, analyzeGlucoseFromImage } from '../src/services/api';
-import { MicIcon, XIcon, DropletIcon, PencilIcon, CameraIcon, UploadIcon, SquareIcon } from './Icons';
+import { XIcon, DropletIcon, PencilIcon, CameraIcon, UploadIcon } from './Icons';
 import Spinner from './Spinner';
-// FIX: The 'LiveSession' type is not exported from '@google/genai'. It has been removed.
-import { GoogleGenAI, Modality, Blob } from '@google/genai';
 
 interface GlucoseLogModalProps {
   isOpen: boolean;
@@ -15,48 +13,13 @@ interface GlucoseLogModalProps {
   editingLog?: GlucoseReading | null; // Optional: for editing existing entries
 }
 
-// --- Audio Helper Functions ---
-function encode(bytes: Uint8Array) {
-  let binary = '';
-  const len = bytes.byteLength;
-  for (let i = 0; i < len; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
-}
-
-function createBlob(data: Float32Array): Blob {
-  const l = data.length;
-  const int16 = new Int16Array(l);
-  for (let i = 0; i < l; i++) {
-    int16[i] = data[i] * 32768;
-  }
-  return {
-    data: encode(new Uint8Array(int16.buffer)),
-    mimeType: 'audio/pcm;rate=16000',
-  };
-}
-
 const GlucoseLogModal: React.FC<GlucoseLogModalProps> = ({ isOpen, onClose, onAddReading, unit, customTimestamp }) => {
-  const [activeTab, setActiveTab] = useState<'voice' | 'manual' | 'photo'>('voice');
+  const [activeTab, setActiveTab] = useState<'manual' | 'photo'>('photo');
 
   // Shared state
   const [parsedData, setParsedData] = useState<{ value: number; context: string } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  
-  // Voice state
-  const [voiceStep, setVoiceStep] = useState<'say_reading' | 'confirm'>('say_reading');
-  const [transcript, setTranscript] = useState('');
-  const [isListening, setIsListening] = useState(false);
-  
-  // Real-time audio state
-  // FIX: Use 'any' for the session ref type as a workaround for the removed 'LiveSession' export from the SDK.
-  const sessionRef = useRef<any | null>(null);
-  const inputAudioContextRef = useRef<AudioContext | null>(null);
-  const scriptProcessorRef = useRef<ScriptProcessorNode | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const aiRef = useRef<GoogleGenAI | null>(null);
 
   // Manual state
   const [manualValue, setManualValue] = useState('');
@@ -69,154 +32,13 @@ const GlucoseLogModal: React.FC<GlucoseLogModalProps> = ({ isOpen, onClose, onAd
   const fileInputRef = useRef<HTMLInputElement>(null);
 
 
-  const handleParseText = useCallback(async (textToParse: string) => {
-    if (!textToParse) return;
-
-    setIsLoading(true);
-    setError('');
-    setParsedData(null);
-    try {
-      const response = await analyzeGlucoseFromText(textToParse);
-      const result = response.data;
-      if (result) {
-        const isValid = unit === 'mmol/L' 
-          ? result.value >= 1 && result.value <= 33
-          : result.value >= 20 && result.value <= 600;
-
-        if (isValid) {
-           setParsedData({ value: result.value, context: result.context });
-           setVoiceStep('confirm');
-        } else {
-           setError(`Invalid glucose value: ${result.value}. Must be between ${unit === 'mmol/L' ? '1 and 33' : '20 and 600'}.`);
-        }
-      } else {
-        setError("Couldn't understand the reading. Please try saying it again.");
-      }
-    } catch (e) {
-      setError('An error occurred during parsing.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [unit]);
-
-  const stopListening = useCallback(async () => {
-    setIsListening(false);
-    if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-        streamRef.current = null;
-    }
-    if (scriptProcessorRef.current) {
-        scriptProcessorRef.current.disconnect();
-        scriptProcessorRef.current = null;
-    }
-    if (inputAudioContextRef.current && inputAudioContextRef.current.state !== 'closed') {
-        await inputAudioContextRef.current.close();
-        inputAudioContextRef.current = null;
-    }
-    if (sessionRef.current) {
-        sessionRef.current.close();
-        sessionRef.current = null;
-    }
-  }, []);
-
-  const startListening = useCallback(async () => {
-    if (isListening) return;
-    resetVoiceState();
-    setIsListening(true);
-    setError('');
-    setTranscript('');
-
-    if (!aiRef.current) {
-        const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-        if (!apiKey) {
-            setError('Gemini API key not configured. Please add VITE_GEMINI_API_KEY to .env.local');
-            setIsListening(false);
-            return;
-        }
-        aiRef.current = new GoogleGenAI({ apiKey });
-    }
-
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        streamRef.current = stream;
-
-        const sessionPromise = aiRef.current.live.connect({
-            model: 'gemini-2.5-flash-native-audio-preview-09-2025',
-            callbacks: {
-                onopen: () => {
-                    inputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
-                    const source = inputAudioContextRef.current.createMediaStreamSource(stream);
-                    const scriptProcessor = inputAudioContextRef.current.createScriptProcessor(4096, 1, 1);
-                    scriptProcessorRef.current = scriptProcessor;
-
-                    scriptProcessor.onaudioprocess = (audioProcessingEvent) => {
-                        const inputData = audioProcessingEvent.inputBuffer.getChannelData(0);
-                        const pcmBlob = createBlob(inputData);
-                        sessionPromise.then((session) => {
-                            session.sendRealtimeInput({ media: pcmBlob });
-                        });
-                    };
-                    source.connect(scriptProcessor);
-                    scriptProcessor.connect(inputAudioContextRef.current.destination);
-                },
-                onmessage: async (message) => {
-                    if (message.serverContent?.inputTranscription) {
-                        const text = message.serverContent.inputTranscription.text;
-                        setTranscript(prev => prev + text);
-                    }
-                },
-                onerror: (e) => {
-                    console.error('Live session error:', e);
-                    setError('A real-time connection error occurred.');
-                    stopListening();
-                },
-                onclose: () => {
-                   // Connection closed
-                },
-            },
-            config: {
-                responseModalities: [Modality.AUDIO],
-                inputAudioTranscription: {},
-            },
-        });
-        sessionRef.current = await sessionPromise;
-    } catch (err) {
-        console.error('Error starting audio session:', err);
-        setError('Could not access the microphone.');
-        setIsListening(false);
-    }
-  }, [isListening]);
-
-
-  useEffect(() => {
-    return () => {
-      stopListening();
-    };
-  }, [stopListening]);
-
-
-  // When listening stops, if we have a transcript, parse it.
-  useEffect(() => {
-      if (!isListening && transcript) {
-          handleParseText(transcript);
-      }
-  }, [isListening, transcript, handleParseText]);
-
-  const resetVoiceState = useCallback(() => {
-    setVoiceStep('say_reading');
-    setTranscript('');
-    setParsedData(null);
-    setError('');
-    setIsLoading(false);
-    stopListening();
-  }, [stopListening]);
 
   const resetManualState = useCallback(() => {
     setManualValue('');
     setManualContext('random');
     setError('');
   }, []);
-  
+
   const resetPhotoState = useCallback(() => {
     setPhotoStep('select_photo');
     setImageFile(null);
@@ -228,34 +50,11 @@ const GlucoseLogModal: React.FC<GlucoseLogModalProps> = ({ isOpen, onClose, onAd
 
   useEffect(() => {
     if (!isOpen) {
-      resetVoiceState();
       resetManualState();
       resetPhotoState();
-      setActiveTab('voice');
+      setActiveTab('photo');
     }
-  }, [isOpen, resetVoiceState, resetManualState, resetPhotoState]);
-
-  const handleToggleListen = () => {
-      if (isListening) {
-          stopListening();
-      } else {
-          startListening();
-      }
-  };
-
-  const handleVoiceSubmit = () => {
-    if (parsedData) {
-      onAddReading({
-        value: parsedData.value,
-        displayUnit: unit,
-        context: (parsedData.context.toLowerCase().replace(' ', '_')) as GlucoseReading['context'],
-        timestamp: (customTimestamp || new Date()).toISOString(),
-        transcript: transcript,
-        source: 'voice',
-      });
-      onClose();
-    }
-  };
+  }, [isOpen, resetManualState, resetPhotoState]);
 
   const handleManualSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -367,46 +166,6 @@ const GlucoseLogModal: React.FC<GlucoseLogModalProps> = ({ isOpen, onClose, onAd
 
   if (!isOpen) return null;
 
-  const renderVoiceContent = () => (
-    <div className="min-h-[220px]">
-        {voiceStep === 'say_reading' && (
-            <div className="text-center py-4 flex flex-col items-center">
-                <p className="text-text-secondary dark:text-slate-400 mb-4">
-                    {isListening
-                        ? 'Tap the icon below to stop recording.'
-                        : 'Tap the mic and say your reading, like "7.8 after dinner".'}
-                </p>
-                <button
-                    onClick={handleToggleListen}
-                    disabled={isLoading}
-                    className={`mx-auto w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 ${isListening ? 'bg-danger dark:bg-danger text-white shadow-lg' : 'bg-gradient-to-br from-primary to-primary-dark text-white hover:shadow-fab'} disabled:bg-slate-300 dark:disabled:bg-slate-600`}
-                >
-                    {isLoading ? <Spinner /> : (isListening ? <SquareIcon className="w-7 h-7" /> : <MicIcon className="w-8 h-8" />)}
-                </button>
-                <p className="text-text-primary dark:text-slate-100 mt-4 min-h-[48px] px-2">{transcript || (isListening ? <span className="text-text-secondary dark:text-slate-400">Listening...</span> : '')}</p>
-            </div>
-        )}
-        {voiceStep === 'confirm' && parsedData && (
-            <div className="mt-4 p-5 bg-primary/5 dark:bg-primary/10 rounded-2xl border-2 border-primary/30 dark:border-primary/40">
-                <div className="text-center">
-                    <p className="text-text-secondary dark:text-slate-400 font-medium">Is this correct?</p>
-                    <p className="text-2xl font-bold text-primary dark:text-primary my-2">{parsedData.value} <span className="text-sm font-normal text-text-secondary dark:text-slate-400">{unit}</span></p>
-                    <p className="text-text-secondary dark:text-slate-400 capitalize font-medium">{parsedData.context.replace('_', ' ')}</p>
-                </div>
-                <div className="grid grid-cols-2 gap-3 mt-6">
-                    <button onClick={resetVoiceState} className="w-full bg-card dark:bg-slate-700 border-2 border-primary/20 dark:border-primary/30 text-text-primary dark:text-slate-100 font-semibold py-3 rounded-lg hover:bg-primary/5 dark:hover:bg-primary/10 hover:border-primary dark:hover:border-primary transition-all duration-300 shadow-card">
-                        Start Over
-                    </button>
-                    <button onClick={handleVoiceSubmit} className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-lg hover:shadow-fab transition-all duration-300">
-                        Confirm & Save
-                    </button>
-                </div>
-            </div>
-        )}
-        {error && <p className="text-danger dark:text-danger text-center mt-4">{error}</p>}
-    </div>
-  );
-
   const renderManualContent = () => (
     <form onSubmit={handleManualSubmit} className="space-y-4 pt-4 min-h-[220px]">
         <div className="grid grid-cols-2 gap-4">
@@ -505,21 +264,16 @@ const GlucoseLogModal: React.FC<GlucoseLogModalProps> = ({ isOpen, onClose, onAd
         </div>
 
         <div className="flex border-b border-border dark:border-slate-700 mb-2">
-            <button onClick={() => { setActiveTab('voice'); resetManualState(); resetPhotoState(); }} className={`px-4 py-2 text-sm font-semibold flex items-center space-x-2 transition-all duration-300 ${activeTab === 'voice' ? 'border-b-2 border-primary text-primary dark:text-primary' : 'text-text-secondary dark:text-slate-400 hover:text-primary dark:hover:text-primary'}`}>
-                <MicIcon className="w-4 h-4" />
-                <span>Voice</span>
-            </button>
-            <button onClick={() => { setActiveTab('manual'); resetVoiceState(); resetPhotoState(); }} className={`px-4 py-2 text-sm font-semibold flex items-center space-x-2 transition-all duration-300 ${activeTab === 'manual' ? 'border-b-2 border-primary text-primary dark:text-primary' : 'text-text-secondary dark:text-slate-400 hover:text-primary dark:hover:text-primary'}`}>
-                <PencilIcon className="w-4 h-4" />
-                <span>Manual</span>
-            </button>
-            <button onClick={() => { setActiveTab('photo'); resetVoiceState(); resetManualState(); }} className={`px-4 py-2 text-sm font-semibold flex items-center space-x-2 transition-all duration-300 ${activeTab === 'photo' ? 'border-b-2 border-primary text-primary dark:text-primary' : 'text-text-secondary dark:text-slate-400 hover:text-primary dark:hover:text-primary'}`}>
+            <button onClick={() => { setActiveTab('photo'); resetManualState(); }} className={`px-4 py-2 text-sm font-semibold flex items-center space-x-2 transition-all duration-300 ${activeTab === 'photo' ? 'border-b-2 border-primary text-primary dark:text-primary' : 'text-text-secondary dark:text-slate-400 hover:text-primary dark:hover:text-primary'}`}>
                 <CameraIcon className="w-4 h-4" />
                 <span>Photo</span>
             </button>
+            <button onClick={() => { setActiveTab('manual'); resetPhotoState(); }} className={`px-4 py-2 text-sm font-semibold flex items-center space-x-2 transition-all duration-300 ${activeTab === 'manual' ? 'border-b-2 border-primary text-primary dark:text-primary' : 'text-text-secondary dark:text-slate-400 hover:text-primary dark:hover:text-primary'}`}>
+                <PencilIcon className="w-4 h-4" />
+                <span>Manual</span>
+            </button>
         </div>
 
-        {activeTab === 'voice' && renderVoiceContent()}
         {activeTab === 'manual' && renderManualContent()}
         {activeTab === 'photo' && renderPhotoContent()}
       </div>
