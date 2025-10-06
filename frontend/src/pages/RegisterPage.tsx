@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { register } from '../services/api';
+import GoogleOAuthButton from '../../components/GoogleOAuthButton';
 
 const RegisterPage: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -11,12 +12,23 @@ const RegisterPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     try {
       await register({ username, email, password });
       navigate('/login');
     } catch (err) {
       setError('Failed to register. Please try again.');
     }
+  };
+
+  const handleGoogleSuccess = (token: string, user: any) => {
+    localStorage.setItem('token', token);
+    // Force a page reload to trigger authentication check
+    window.location.href = '/';
+  };
+
+  const handleGoogleError = (error: string) => {
+    setError(error);
   };
 
   return (
@@ -63,6 +75,23 @@ const RegisterPage: React.FC = () => {
         <button type="submit" className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-lg hover:shadow-fab transition-all duration-300 mt-4">
           Register
         </button>
+
+        {/* Divider */}
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-border dark:border-slate-600"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-card dark:bg-slate-800 text-text-secondary dark:text-slate-400">Or continue with</span>
+          </div>
+        </div>
+
+        {/* Google OAuth Button */}
+        <GoogleOAuthButton
+          onSuccess={handleGoogleSuccess}
+          onError={handleGoogleError}
+        />
+
         <p className="text-text-secondary dark:text-slate-400 text-center mt-4">
           Already have an account? <a href="/login" className="text-primary dark:text-primary-light font-semibold hover:underline">Login</a>
         </p>

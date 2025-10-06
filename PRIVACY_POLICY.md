@@ -72,6 +72,12 @@ We use your information **only** to:
 
 We use the following third-party services:
 
+### **Google OAuth** (Optional Sign-In)
+- **Purpose:** Allow you to sign in with your Google account (optional - you can also use email/password)
+- **Data Shared:** Only your email address and name from your Google account
+- **Data Retention:** We only store your email to create your account - Google handles the authentication
+- **Privacy Policy:** https://policies.google.com/privacy
+
 ### **Google Gemini AI** (Photo Analysis)
 - **Purpose:** Analyze photos to extract glucose readings, meal nutrition, weight, and blood pressure
 - **Data Shared:** Only the photos you choose to analyze

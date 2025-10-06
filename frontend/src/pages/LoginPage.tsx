@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login } from '../services/api';
+import GoogleOAuthButton from '../../components/GoogleOAuthButton';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -10,6 +11,7 @@ const LoginPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     try {
       const response = await login({ email, password });
       localStorage.setItem('token', response.data.token);
@@ -18,6 +20,16 @@ const LoginPage: React.FC = () => {
     } catch (err) {
       setError('Failed to login. Please check your credentials.');
     }
+  };
+
+  const handleGoogleSuccess = (token: string, user: any) => {
+    localStorage.setItem('token', token);
+    // Force a page reload to trigger authentication check
+    window.location.href = '/';
+  };
+
+  const handleGoogleError = (error: string) => {
+    setError(error);
   };
 
   return (
@@ -52,6 +64,23 @@ const LoginPage: React.FC = () => {
         <button type="submit" className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-lg hover:shadow-fab transition-all duration-300 mt-4">
           Login
         </button>
+
+        {/* Divider */}
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-border dark:border-slate-600"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-card dark:bg-slate-800 text-text-secondary dark:text-slate-400">Or continue with</span>
+          </div>
+        </div>
+
+        {/* Google OAuth Button */}
+        <GoogleOAuthButton
+          onSuccess={handleGoogleSuccess}
+          onError={handleGoogleError}
+        />
+
         <p className="text-text-secondary dark:text-slate-400 text-center mt-4">
           Don't have an account? <a href="/register" className="text-primary dark:text-primary-light font-semibold hover:underline">Register</a>
         </p>
