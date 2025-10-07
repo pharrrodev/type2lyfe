@@ -21,7 +21,7 @@ const GoogleOAuthButton: React.FC<GoogleOAuthButtonProps> = ({
       }
 
       // Send the Google credential to our backend
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const apiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:3000').replace(/\/$/, '');
       const response = await axios.post(`${apiUrl}/api/auth/google`, {
         credential: credentialResponse.credential,
       });
