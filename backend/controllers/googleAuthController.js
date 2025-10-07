@@ -49,11 +49,17 @@ const googleAuth = async (req, res) => {
       console.log(`Existing user logged in via Google OAuth: ${email}`);
     }
 
-    // Generate JWT token (same as regular login)
+    // Generate JWT token (same format as regular login)
+    const payload = {
+      user: {
+        id: user.id,
+      },
+    };
+
     const token = jwt.sign(
-      { userId: user.id, email: user.email },
+      payload,
       process.env.JWT_SECRET,
-      { expiresIn: '360000s' } // Same as regular login
+      { expiresIn: 360000 } // Same as regular login
     );
 
     res.json({
