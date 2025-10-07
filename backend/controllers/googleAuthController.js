@@ -7,6 +7,7 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 /**
  * Verify Google OAuth token and create/login user
  * POST /api/auth/google
+ * Handles Google Sign-In authentication
  */
 const googleAuth = async (req, res) => {
   try {
