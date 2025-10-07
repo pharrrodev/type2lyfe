@@ -50,14 +50,14 @@ const googleAuth = async (req, res) => {
     }
 
     // Generate JWT token (same format as regular login)
-    const payload = {
+    const jwtPayload = {
       user: {
         id: user.id,
       },
     };
 
     const token = jwt.sign(
-      payload,
+      jwtPayload,
       process.env.JWT_SECRET,
       { expiresIn: 360000 } // Same as regular login
     );
