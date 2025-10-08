@@ -89,3 +89,15 @@ pnpm-lock.yaml
 .vercel
 .netlify
 
+# Android/Bubblewrap Build Files (NEVER COMMIT KEYSTORES!)
+android-keystore.keystore
+*.keystore
+*.jks
+*.aab
+*.apk
+app-release-signed.aab
+app-release-bundle.aab
+twa-manifest.json
+store_icon.png
+key.properties
+

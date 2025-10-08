@@ -1,0 +1,10 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.pharrrodev.type2lyfe",
+    "sha256_cert_fingerprints": [
+      "6E:A3:FB:36:BA:94:C1:35:2A:F8:C5:4D:F3:41:A3:B2:75:6E:B3:3E:13:8B:5D:21:B6:52:F1:A7:19:BD:6B:AC"
+    ]
+  }
+}]
