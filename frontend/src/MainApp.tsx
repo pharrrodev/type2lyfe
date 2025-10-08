@@ -312,6 +312,7 @@ const MainApp: React.FC = () => {
                     onAddBloodPressure={addBloodPressureReading}
                     userMedications={userMedications}
                     unit={glucoseUnit}
+                    onNavigateToSettings={() => setActivePage('settings')}
                 />;
       case 'settings':
         return <SettingsPage
@@ -400,6 +401,7 @@ const MainApp: React.FC = () => {
           onClose={() => setIsMedicationModalOpen(false)}
           onAddMedication={addMedication}
           userMedications={userMedications}
+          onNavigateToSettings={() => setActivePage('settings')}
         />
       )}
       {isWeightModalOpen && (

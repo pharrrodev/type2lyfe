@@ -8,9 +8,10 @@ interface MedicationLogModalProps {
   onAddMedication: (medication: Omit<Medication, 'id'>) => void;
   userMedications: UserMedication[];
   customTimestamp?: Date; // Optional: for late entries
+  onNavigateToSettings?: () => void; // Optional: callback to navigate to settings
 }
 
-const MedicationLogModal: React.FC<MedicationLogModalProps> = ({ isOpen, onClose, onAddMedication, userMedications, customTimestamp }) => {
+const MedicationLogModal: React.FC<MedicationLogModalProps> = ({ isOpen, onClose, onAddMedication, userMedications, customTimestamp, onNavigateToSettings }) => {
   // Manual mode only - voice removed because medication names are too long to say accurately
   const [selectedMedId, setSelectedMedId] = useState<string>('');
   const [quantity, setQuantity] = useState(1);
@@ -98,13 +99,17 @@ const MedicationLogModal: React.FC<MedicationLogModalProps> = ({ isOpen, onClose
               <p className="text-text-secondary dark:text-slate-400 mb-6 text-sm">
                 You need to add your medications first before you can log them.
               </p>
-              <a
-                href="/settings"
-                onClick={onClose}
+              <button
+                onClick={() => {
+                  onClose();
+                  if (onNavigateToSettings) {
+                    onNavigateToSettings();
+                  }
+                }}
                 className="inline-block bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 px-6 rounded-lg hover:shadow-fab transition-all duration-300"
               >
                 Go to Settings → My Medications
-              </a>
+              </button>
             </div>
           ) : (
             <form onSubmit={(e) => { e.preventDefault(); handleManualSubmit(); }} className="space-y-4">

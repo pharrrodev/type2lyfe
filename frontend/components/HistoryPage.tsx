@@ -17,6 +17,7 @@ interface HistoryPageProps {
     onAddBloodPressure: (reading: Omit<BloodPressureReading, 'id'>) => void;
     userMedications: UserMedication[];
     unit: 'mg/dL' | 'mmol/L';
+    onNavigateToSettings?: () => void;
 }
 
 const HistoryPage: React.FC<HistoryPageProps> = ({
@@ -26,7 +27,8 @@ const HistoryPage: React.FC<HistoryPageProps> = ({
     onAddWeight,
     onAddBloodPressure,
     userMedications,
-    unit
+    unit,
+    onNavigateToSettings
 }) => {
     const [isDateTimeModalOpen, setIsDateTimeModalOpen] = useState(false);
     const [isLogTypeSelectorOpen, setIsLogTypeSelectorOpen] = useState(false);
@@ -113,6 +115,7 @@ const HistoryPage: React.FC<HistoryPageProps> = ({
                     onAddMedication={onAddMedication}
                     userMedications={userMedications}
                     customTimestamp={selectedTimestamp}
+                    onNavigateToSettings={onNavigateToSettings}
                 />
             )}
 
