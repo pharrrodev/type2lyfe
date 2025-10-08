@@ -55,8 +55,26 @@ const WeightLogModal: React.FC<WeightLogModalProps> = ({ isOpen, onClose, onAddR
         <button onClick={onClose} className="absolute top-4 right-4 text-text-secondary dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-all duration-300"><XIcon className="w-6 h-6" /></button>
         <div className="flex items-center space-x-3 mb-5">
           <WeightScaleIcon className="w-7 h-7 text-warning dark:text-warning" />
-          <h2 className="text-2xl font-bold text-text-primary dark:text-slate-100">Log Weight</h2>
+          <h2 className="text-2xl font-bold text-text-primary dark:text-slate-100">
+            {customTimestamp ? 'Log Past Weight Reading' : 'Log Weight'}
+          </h2>
         </div>
+
+        {customTimestamp && (
+          <div className="mb-4 p-3 bg-primary bg-opacity-5 rounded-lg border border-primary border-opacity-20">
+            <p className="text-sm text-text-secondary">Recording for:</p>
+            <p className="text-base font-medium text-text-primary">
+              {customTimestamp.toLocaleString('en-US', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              })}
+            </p>
+          </div>
+        )}
 
         <form onSubmit={handleManualSubmit} className="space-y-4 pt-4">
           <div className="grid grid-cols-2 gap-4">

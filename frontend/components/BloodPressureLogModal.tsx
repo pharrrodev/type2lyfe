@@ -71,7 +71,9 @@ const BloodPressureLogModal: React.FC<BloodPressureLogModalProps> = ({ isOpen, o
         <div className="flex items-center justify-between p-5 border-b border-border dark:border-slate-700">
           <div className="flex items-center gap-2">
             <BloodPressureIcon className="w-7 h-7 text-danger dark:text-danger" />
-            <h2 className="text-2xl font-bold text-text-primary dark:text-slate-100">Log Blood Pressure</h2>
+            <h2 className="text-2xl font-bold text-text-primary dark:text-slate-100">
+              {customTimestamp ? 'Log Past Blood Pressure' : 'Log Blood Pressure'}
+            </h2>
           </div>
           <button onClick={onClose} className="text-text-secondary dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-all duration-300">
             <XIcon className="w-6 h-6" />
@@ -79,6 +81,22 @@ const BloodPressureLogModal: React.FC<BloodPressureLogModalProps> = ({ isOpen, o
         </div>
 
         <div className="p-6">
+          {customTimestamp && (
+            <div className="mb-4 p-3 bg-primary bg-opacity-5 rounded-lg border border-primary border-opacity-20">
+              <p className="text-sm text-text-secondary">Recording for:</p>
+              <p className="text-base font-medium text-text-primary">
+                {customTimestamp.toLocaleString('en-US', {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </p>
+            </div>
+          )}
+
           <form onSubmit={handleManualSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>

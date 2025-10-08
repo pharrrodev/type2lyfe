@@ -65,7 +65,9 @@ const MedicationLogModal: React.FC<MedicationLogModalProps> = ({ isOpen, onClose
         <div className="flex items-center justify-between p-5 border-b border-border dark:border-slate-700">
           <div className="flex items-center gap-2">
             <PillIcon className="w-7 h-7 text-accent-purple dark:text-accent-purple" />
-            <h2 className="text-2xl font-bold text-text-primary dark:text-slate-100">Log Medication</h2>
+            <h2 className="text-2xl font-bold text-text-primary dark:text-slate-100">
+              {customTimestamp ? 'Log Past Medication' : 'Log Medication'}
+            </h2>
           </div>
           <button onClick={onClose} className="text-text-secondary dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-all duration-300">
             <XIcon className="w-6 h-6" />
@@ -73,6 +75,22 @@ const MedicationLogModal: React.FC<MedicationLogModalProps> = ({ isOpen, onClose
         </div>
 
         <div className="p-6">
+          {customTimestamp && (
+            <div className="mb-4 p-3 bg-primary bg-opacity-5 rounded-lg border border-primary border-opacity-20">
+              <p className="text-sm text-text-secondary">Recording for:</p>
+              <p className="text-base font-medium text-text-primary">
+                {customTimestamp.toLocaleString('en-US', {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </p>
+            </div>
+          )}
+
           {userMedications.length === 0 ? (
             <div className="text-center py-8">
               <PillIcon className="w-16 h-16 mx-auto text-text-light dark:text-slate-600 mb-4" />
