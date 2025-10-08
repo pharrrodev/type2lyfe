@@ -1,16 +1,8 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { GlucoseReading, Meal, Medication, UserMedication, FoodItem, WeightReading, BloodPressureReading } from '../types';
 import {
-    parseLateEntry,
-    analyzeGlucoseFromText as parseGlucoseReadingFromText,
-    analyzeGlucoseFromImage as parseGlucoseReadingFromImage,
-    analyzeWeightFromText as parseWeightFromText,
-    analyzeWeightFromImage as parseWeightFromImage,
-    analyzeBpFromText as parseBloodPressureFromText,
-    analyzeBpFromImage as parseBloodPressureFromImage,
     analyzeMealFromImage,
-    analyzeMealFromText,
-    parseMedicationFromText
+    analyzeMealFromText
 } from '../src/services/api';
 import { CalendarClockIcon, DropletIcon, ForkSpoonIcon, PillIcon, PencilIcon, CameraIcon, UploadIcon, WeightScaleIcon, BloodPressureIcon } from './Icons';
 import Spinner from './Spinner';
@@ -47,27 +39,11 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
     // --- General State ---
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
-    const [isListening, setIsListening] = useState(false);
-    const [currentTranscript, setCurrentTranscript] = useState('');
     const mealFileInputRef = useRef<HTMLInputElement>(null);
-    const glucoseFileInputRef = useRef<HTMLInputElement>(null);
-    const weightFileInputRef = useRef<HTMLInputElement>(null);
-    const bpFileInputRef = useRef<HTMLInputElement>(null);
-    const listeningForRef = useRef<LogType | null>(null);
-    const sessionRef = useRef<any | null>(null);
-    const inputAudioContextRef = useRef<AudioContext | null>(null);
-    const scriptProcessorRef = useRef<ScriptProcessorNode | null>(null);
-    const streamRef = useRef<MediaStream | null>(null);
 
     // --- Glucose states ---
-    const [glucoseLogMode, setGlucoseLogMode] = useState<'manual' | 'photo'>('photo');
-    const [glucoseVoiceStep, setGlucoseVoiceStep] = useState<'say_reading' | 'confirm'>('say_reading');
-    const [glucoseParsedData, setGlucoseParsedData] = useState<{ value: number; context: string } | null>(null);
     const [manualGlucoseValue, setManualGlucoseValue] = useState('');
     const [manualGlucoseContext, setManualGlucoseContext] = useState<GlucoseReading['context']>('random');
-    const [glucoseImageFile, setGlucoseImageFile] = useState<File | null>(null);
-    const [glucosePreviewUrl, setGlucosePreviewUrl] = useState<string | null>(null);
-    const [glucosePhotoStep, setGlucosePhotoStep] = useState<'select_photo' | 'confirm'>('select_photo');
     
     // --- Meal states ---
     const [mealLogMode, setMealLogMode] = useState<'manual' | 'photo'>('manual');
@@ -78,8 +54,6 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
     const [analysisResult, setAnalysisResult] = useState<{ items: FoodItem[], total: { calories: number; protein: number; carbs: number; fat: number; sugar: number } } | null>(null);
     
     // --- Medication states ---
-    const [medVoiceStep, setMedVoiceStep] = useState<'say_medication' | 'confirm'>('say_medication');
-    const [medData, setMedData] = useState<{ med: UserMedication | null, quantity: number, transcript: string }>({ med: null, quantity: 0, transcript: '' });
     const [selectedMedId, setSelectedMedId] = useState<string>('');
     const [medQuantity, setMedQuantity] = useState(1);
 
@@ -92,249 +66,16 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
     }, [userMedications, selectedMedId]);
 
     // --- Weight states ---
-    const [weightLogMode, setWeightLogMode] = useState<'manual' | 'photo'>('photo');
-    const [weightVoiceStep, setWeightVoiceStep] = useState<'say_reading' | 'confirm'>('say_reading');
-    const [weightParsedData, setWeightParsedData] = useState<{ value: number; unit: 'kg' | 'lbs' } | null>(null);
     const [manualWeightValue, setManualWeightValue] = useState('');
     const [manualWeightUnit, setManualWeightUnit] = useState<'kg' | 'lbs'>('kg');
-    const [weightImageFile, setWeightImageFile] = useState<File | null>(null);
-    const [weightPreviewUrl, setWeightPreviewUrl] = useState<string | null>(null);
-    const [weightPhotoStep, setWeightPhotoStep] = useState<'select_photo' | 'confirm'>('select_photo');
-    
+
     // --- Blood Pressure states ---
-    const [bpLogMode, setBpLogMode] = useState<'manual' | 'photo'>('manual');
-    const [bpVoiceStep, setBpVoiceStep] = useState<'say_reading' | 'confirm'>('say_reading');
-    const [bpParsedData, setBpParsedData] = useState<{ systolic: number; diastolic: number; pulse: number } | null>(null);
     const [manualSystolic, setManualSystolic] = useState('');
     const [manualDiastolic, setManualDiastolic] = useState('');
     const [manualPulse, setManualPulse] = useState('');
-    const [bpImageFile, setBpImageFile] = useState<File | null>(null);
-    const [bpPreviewUrl, setBpPreviewUrl] = useState<string | null>(null);
-    const [bpPhotoStep, setBpPhotoStep] = useState<'select_photo' | 'confirm'>('select_photo');
 
-    
-    // --- Voice Parsing Logic ---
-    const handleParseGlucose = useCallback(async (textToParse: string) => {
-        if (!textToParse) return;
-        setIsLoading(true);
-        setError('');
-        setGlucoseParsedData(null);
-        try {
-            const response = await parseGlucoseReadingFromText(textToParse);
-            const result = response.data;
-            if (result) {
-                const isValid = unit === 'mmol/L' ? result.value >= 1 && result.value <= 33 : result.value >= 20 && result.value <= 600;
-                if (isValid) {
-                    setGlucoseParsedData({ value: result.value, context: result.context });
-                    setGlucoseVoiceStep('confirm');
-                } else setError(`Invalid glucose value: ${result.value}.`);
-            } else {
-                setError("Couldn't understand the reading. Please try again.");
-            }
-        } catch (e) { setError('An error occurred during parsing.'); }
-        finally {
-            setIsLoading(false);
-            listeningForRef.current = null; // Clear to prevent re-processing
-        }
-    }, [unit]);
-
-    const processMedicationSpeechResult = useCallback(async (text: string) => {
-        setIsLoading(true);
-        setError('');
-        try {
-            const result = await parseMedicationFromText(text, userMedications);
-            if (result) {
-                setMedData({ med: result.matchedMed, quantity: result.quantity, transcript: text });
-                setMedVoiceStep('confirm');
-            } else {
-                setError(`Could not understand the medication or quantity from "${text}".`);
-            }
-        } catch (e) { setError('An error occurred.'); } 
-        finally { setIsLoading(false); }
-    }, [userMedications]);
-
-    const handleParseWeight = useCallback(async (textToParse: string) => {
-        if (!textToParse) return;
-        setIsLoading(true);
-        setError('');
-        setWeightParsedData(null);
-        try {
-            const response = await parseWeightFromText(textToParse);
-            const result = response.data;
-            if (result) {
-                setWeightParsedData(result);
-                setWeightVoiceStep('confirm');
-            } else {
-                setError("Couldn't understand the weight. Please try again.");
-            }
-        } catch (e) { setError('An error occurred during parsing.'); }
-        finally {
-            setIsLoading(false);
-            listeningForRef.current = null; // Clear to prevent re-processing
-        }
-    }, []);
-
-    const handleParseBloodPressure = useCallback(async (textToParse: string) => {
-        if (!textToParse) return;
-        setIsLoading(true);
-        setError('');
-        setBpParsedData(null);
-        try {
-            const response = await parseBloodPressureFromText(textToParse);
-            const result = response.data;
-            if (result) {
-                setBpParsedData(result);
-                setBpVoiceStep('confirm');
-            } else {
-                setError("Couldn't understand the blood pressure reading. Please try again.");
-            }
-        } catch (e) { setError('An error occurred during parsing.'); } 
-        finally { setIsLoading(false); }
-    }, []);
-
-    // --- Real-time Audio Logic ---
-    const stopListening = useCallback(async () => {
-        setIsListening(false);
-        if (streamRef.current) {
-            streamRef.current.getTracks().forEach(track => track.stop());
-            streamRef.current = null;
-        }
-        if (scriptProcessorRef.current) {
-            scriptProcessorRef.current.disconnect();
-            scriptProcessorRef.current = null;
-        }
-        if (inputAudioContextRef.current && inputAudioContextRef.current.state !== 'closed') {
-            await inputAudioContextRef.current.close();
-            inputAudioContextRef.current = null;
-        }
-        if (sessionRef.current) {
-            sessionRef.current.close();
-            sessionRef.current = null;
-        }
-        // Processing happens in useEffect below - don't process here to avoid race conditions
-    }, []); // No dependencies - stable function
-
-
-    const startListening = useCallback(async (mode: LogType) => {
-        if (isListening) {
-            console.log('🎤 Already listening, ignoring start request');
-            return;
-        }
-
-        console.log('🎤 Starting listening for mode:', mode);
-        setIsListening(true);
-        setError('');
-        setCurrentTranscript('');
-        listeningForRef.current = mode;
-
-        if (!aiRef.current) {
-            const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-            console.log('🔑 API Key present:', !!apiKey);
-            if (!apiKey) {
-                setError('Gemini API key not configured. Please add VITE_GEMINI_API_KEY to .env.local');
-                setIsListening(false);
-                listeningForRef.current = null;
-                return;
-            }
-            aiRef.current = new GoogleGenAI({ apiKey });
-        }
-
-        try {
-            console.log('🎤 Requesting microphone access...');
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            streamRef.current = stream;
-            console.log('🎤 Microphone access granted');
-
-            console.log('🎤 Connecting to Gemini Live API...');
-            const sessionPromise = aiRef.current.live.connect({
-                model: 'gemini-2.5-flash-native-audio-preview-09-2025',
-                callbacks: {
-                    onopen: () => {
-                        console.log('🎤 Gemini session opened');
-                        inputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
-                        const source = inputAudioContextRef.current.createMediaStreamSource(stream);
-                        const scriptProcessor = inputAudioContextRef.current.createScriptProcessor(4096, 1, 1);
-                        scriptProcessorRef.current = scriptProcessor;
-
-                        scriptProcessor.onaudioprocess = (audioProcessingEvent) => {
-                            const inputData = audioProcessingEvent.inputBuffer.getChannelData(0);
-                            const pcmBlob = createBlob(inputData);
-                            sessionPromise.then((session) => {
-                                session.sendRealtimeInput({ media: pcmBlob });
-                            });
-                        };
-                        source.connect(scriptProcessor);
-                        scriptProcessor.connect(inputAudioContextRef.current.destination);
-                        console.log('🎤 Audio processing pipeline connected');
-                    },
-                    onmessage: async (message) => {
-                        if (message.serverContent?.inputTranscription) {
-                            const text = message.serverContent.inputTranscription.text;
-                            console.log('🎤 Transcription received:', text);
-                            setCurrentTranscript(prev => prev + text);
-                        }
-                    },
-                    onerror: (e) => {
-                        console.error('🎤 Live session error:', e);
-                        setError('A real-time connection error occurred.');
-                        stopListening();
-                    },
-                    onclose: () => {
-                        console.log('🎤 Gemini session closed');
-                    },
-                },
-                config: {
-                    responseModalities: [Modality.AUDIO],
-                    inputAudioTranscription: {},
-                },
-            });
-            sessionRef.current = await sessionPromise;
-            console.log('🎤 Session connected successfully');
-        } catch (err) {
-            console.error('🎤 Error starting audio session:', err);
-            setError('Could not access the microphone. Please check permissions.');
-            setIsListening(false);
-            listeningForRef.current = null;
-        }
-    }, [isListening]); // Added isListening back to dependencies
-    
-    useEffect(() => {
-      return () => {
-        stopListening();
-      };
-    }, [stopListening]);
-
-    // Process voice input when listening stops
-    useEffect(() => {
-        if (!isListening && currentTranscript && listeningForRef.current) {
-             const mode = listeningForRef.current;
-             const transcriptToProcess = currentTranscript;
-
-             // Clear transcript immediately to prevent re-processing on next render
-             setCurrentTranscript('');
-
-             // Process based on mode (this will trigger parsing and eventually clear listeningForRef)
-             if (mode === 'glucose') handleParseGlucose(transcriptToProcess);
-             else if (mode === 'medication') processMedicationSpeechResult(transcriptToProcess);
-             else if (mode === 'weight') handleParseWeight(transcriptToProcess);
-             else if (mode === 'blood_pressure') handleParseBloodPressure(transcriptToProcess);
-        }
-    }, [isListening, currentTranscript, handleParseGlucose, processMedicationSpeechResult, handleParseWeight, handleParseBloodPressure]);
 
     // --- General Functions ---
-
-    // Clear voice state when switching log types
-    useEffect(() => {
-        // Stop any active listening
-        if (isListening) {
-            stopListening();
-        }
-        // Clear transcript and listening ref
-        setCurrentTranscript('');
-        listeningForRef.current = null;
-        setError('');
-        setIsLoading(false);
-    }, [activeLogType]); // Run when log type changes
 
     useEffect(() => {
         if (userMedications.length > 0 && !selectedMedId) {
@@ -349,46 +90,10 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
 
     // --- Glucose Logic ---
     const resetGlucoseState = () => {
-        listeningForRef.current = null;
-        setGlucoseParsedData(null);
         setError('');
         setIsLoading(false);
-        setGlucoseLogMode('voice');
-        setGlucoseVoiceStep('say_reading');
         setManualGlucoseValue('');
         setManualGlucoseContext('random');
-        setCurrentTranscript('');
-        setGlucoseImageFile(null);
-        setGlucosePreviewUrl(null);
-        setGlucosePhotoStep('select_photo');
-        stopListening();
-    };
-    
-    const handleGlucoseToggleListen = () => {
-        if (isListening) {
-            stopListening();
-        } else {
-            // Don't call resetGlucoseState() here - it calls stopListening() which creates race condition
-            // Just clear the necessary state and start listening
-            setGlucoseParsedData(null);
-            setError('');
-            setGlucoseVoiceStep('say_reading');
-            startListening('glucose');
-        }
-    };
-
-    const handleVoiceGlucoseSubmit = () => {
-        if (!glucoseParsedData) return;
-        onAddGlucose({
-            value: glucoseParsedData.value,
-            displayUnit: unit,
-            context: (glucoseParsedData.context.toLowerCase().replace(' ', '_')) as GlucoseReading['context'],
-            timestamp: timestamp.toISOString(),
-            source: 'voice',
-            transcript: currentTranscript
-        });
-        resetGlucoseState();
-        handleSuccess('Glucose reading saved!');
     };
 
     const handleManualGlucoseSubmit = (e: React.FormEvent) => {
@@ -415,76 +120,10 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
         handleSuccess('Glucose reading saved!');
     };
     
-    const handleGlucoseFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file) {
-          setGlucoseImageFile(file);
-          setGlucosePreviewUrl(URL.createObjectURL(file));
-          setGlucoseParsedData(null);
-          setError('');
-        }
-    };
 
-    const handleGlucosePhotoAnalyze = async () => {
-        if (!glucoseImageFile) return;
-
-        setIsLoading(true);
-        setError('');
-        setGlucoseParsedData(null);
-
-        const reader = new FileReader();
-        reader.readAsDataURL(glucoseImageFile);
-        reader.onload = async () => {
-          try {
-            const base64String = (reader.result as string).split(',')[1];
-            const response = await parseGlucoseReadingFromImage(base64String, glucoseImageFile.type);
-            const result = response.data;
-            if (result) {
-                const isValid = unit === 'mmol/L'
-                  ? result.value >= 1 && result.value <= 33
-                  : result.value >= 20 && result.value <= 600;
-
-                if (isValid) {
-                   setGlucoseParsedData({ value: result.value, context: result.context });
-                   setGlucosePhotoStep('confirm');
-                } else {
-                   setError(`Invalid glucose value from image: ${result.value}.`);
-                }
-            } else {
-              setError("Couldn't read the value from the image. Please try another photo.");
-            }
-          } catch (e) {
-            if (e instanceof Error) {
-                setError(e.message);
-            } else {
-                setError('An error occurred during image analysis.');
-            }
-          } finally {
-            setIsLoading(false);
-          }
-        };
-        reader.onerror = () => {
-          setError('Failed to read the image file.');
-          setIsLoading(false);
-        };
-    };
-
-    const handlePhotoGlucoseSubmit = () => {
-        if (glucoseParsedData) {
-          onAddGlucose({
-            value: glucoseParsedData.value,
-            displayUnit: unit,
-            context: (glucoseParsedData.context.toLowerCase().replace(' ', '_')) as GlucoseReading['context'],
-            timestamp: timestamp.toISOString(),
-            source: 'photo_analysis',
-          });
-          resetGlucoseState();
-          handleSuccess('Glucose reading saved!');
-        }
-    };
 
     // --- Meal Logic ---
-    const resetMealState = useCallback(() => {
+    const resetMealState = () => {
         setMealDescription('');
         setMealCarbs('');
         setMealImageFile(null);
@@ -492,10 +131,9 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
         setAnalysisResult(null);
         setIsLoading(false);
         setError('');
-        stopListening();
-    }, [stopListening]);
+    };
 
-    useEffect(() => { resetMealState(); }, [mealLogMode, resetMealState]);
+    useEffect(() => { resetMealState(); }, [mealLogMode]);
     
     const getMealType = (date: Date): Meal['mealType'] => {
         const hour = date.getHours();
@@ -649,43 +287,10 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
 
     // --- Weight Logic ---
     const resetWeightState = () => {
-        listeningForRef.current = null;
-        setWeightParsedData(null);
         setError('');
         setIsLoading(false);
-        setWeightLogMode('voice');
-        setWeightVoiceStep('say_reading');
         setManualWeightValue('');
         setManualWeightUnit('kg');
-        setCurrentTranscript('');
-        setWeightImageFile(null);
-        setWeightPreviewUrl(null);
-        setWeightPhotoStep('select_photo');
-        stopListening();
-    };
-
-    const handleWeightToggleListen = () => {
-        if (isListening) stopListening();
-        else {
-            // Don't call resetWeightState() here - it calls stopListening() which creates race condition
-            // Just clear the necessary state and start listening
-            setWeightParsedData(null);
-            setError('');
-            setWeightVoiceStep('say_reading');
-            startListening('weight');
-        }
-    };
-
-    const handleVoiceWeightSubmit = () => {
-        if (!weightParsedData) return;
-        onAddWeight({
-            ...weightParsedData,
-            timestamp: timestamp.toISOString(),
-            source: 'voice',
-            transcript: currentTranscript
-        });
-        resetWeightState();
-        handleSuccess('Weight reading saved!');
     };
 
     const handleManualWeightSubmit = (e: React.FormEvent) => {
@@ -706,88 +311,15 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
         handleSuccess('Weight reading saved!');
     };
 
-    const handleWeightFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setWeightImageFile(file);
-            setWeightPreviewUrl(URL.createObjectURL(file));
-            setError('');
-        }
-    };
 
-    const handleWeightPhotoAnalyze = async () => {
-        if (!weightImageFile) return;
-        setIsLoading(true);
-        setError('');
-        const reader = new FileReader();
-        reader.readAsDataURL(weightImageFile);
-        reader.onload = async () => {
-            try {
-                const base64 = (reader.result as string).split(',')[1];
-                const response = await parseWeightFromImage(base64, weightImageFile.type);
-                const result = response.data;
-                if (result) {
-                    setWeightParsedData(result);
-                    setWeightPhotoStep('confirm');
-                } else {
-                    setError("Couldn't read the weight from the image.");
-                }
-            } catch (e) {
-                setError(e instanceof Error ? e.message : 'An error occurred.');
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        reader.onerror = () => { setIsLoading(false); setError('Failed to read file.'); };
-    };
-
-    const handlePhotoWeightSubmit = () => {
-        if (!weightParsedData) return;
-        onAddWeight({
-            ...weightParsedData,
-            timestamp: timestamp.toISOString(),
-            source: 'photo_analysis',
-        });
-        resetWeightState();
-        handleSuccess('Weight reading saved!');
-    };
 
     // --- Blood Pressure Logic ---
     const resetBpState = () => {
-        listeningForRef.current = null;
-        setBpParsedData(null);
         setError('');
         setIsLoading(false);
-        setBpLogMode('voice');
-        setBpVoiceStep('say_reading');
         setManualSystolic('');
         setManualDiastolic('');
         setManualPulse('');
-        setCurrentTranscript('');
-        setBpImageFile(null);
-        setBpPreviewUrl(null);
-        setBpPhotoStep('select_photo');
-        stopListening();
-    };
-
-    const handleBpToggleListen = () => {
-        if (isListening) stopListening();
-        else {
-            resetBpState();
-            startListening('blood_pressure');
-        }
-    };
-
-    const handleVoiceBpSubmit = () => {
-        if (!bpParsedData) return;
-        onAddBloodPressure({
-            ...bpParsedData,
-            timestamp: timestamp.toISOString(),
-            source: 'voice',
-            transcript: currentTranscript
-        });
-        resetBpState();
-        handleSuccess('Blood pressure reading saved!');
     };
 
     const handleManualBpSubmit = (e: React.FormEvent) => {
@@ -811,167 +343,33 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
         handleSuccess('Blood pressure reading saved!');
     };
 
-    const handleBpFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setBpImageFile(file);
-            setBpPreviewUrl(URL.createObjectURL(file));
-            setError('');
-        }
-    };
-    
-    const handleBpPhotoAnalyze = async () => {
-        if (!bpImageFile) return;
-        setIsLoading(true);
-        setError('');
-        const reader = new FileReader();
-        reader.readAsDataURL(bpImageFile);
-        reader.onload = async () => {
-            try {
-                const base64 = (reader.result as string).split(',')[1];
-                const response = await parseBloodPressureFromImage(base64, bpImageFile.type);
-                const result = response.data;
-                if (result) {
-                    setBpParsedData(result);
-                    setBpPhotoStep('confirm');
-                } else {
-                    setError("Couldn't read the blood pressure from the image.");
-                }
-            } catch (e) {
-                setError(e instanceof Error ? e.message : 'An error occurred.');
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        reader.onerror = () => { setIsLoading(false); setError('Failed to read file.'); };
-    };
 
-    const handlePhotoBpSubmit = () => {
-        if (!bpParsedData) return;
-        onAddBloodPressure({
-            ...bpParsedData,
-            timestamp: timestamp.toISOString(),
-            source: 'photo_analysis',
-        });
-        resetBpState();
-        handleSuccess('Blood pressure reading saved!');
-    };
 
 
     const renderGlucoseContent = () => {
-        const renderVoiceContent = () => (
-            <div>
-                {glucoseVoiceStep === 'say_reading' && (
-                    <div className="text-center py-4">
-                        <p className="text-text-secondary dark:text-slate-400 mb-4 font-medium">{isListening && listeningForRef.current === 'glucose' ? 'Tap icon to stop recording.' : 'Tap icon and say your glucose reading.'}</p>
-                        <button
-                            type="button"
-                            onClick={handleGlucoseToggleListen}
-                            disabled={isLoading}
-                            className={`mx-auto w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 ${isListening && listeningForRef.current === 'glucose' ? 'bg-accent-pink text-white shadow-lg' : 'bg-gradient-to-br from-primary to-primary-dark text-white hover:shadow-fab'} disabled:bg-slate-300`}
-                        >
-                            {isLoading ? <Spinner /> : (isListening && listeningForRef.current === 'glucose' ? <SquareIcon className="w-7 h-7" /> : <MicIcon className="w-8 h-8" />)}
-                        </button>
-                        <p className="text-text-primary dark:text-slate-100 mt-4 min-h-[24px] px-2">{listeningForRef.current === 'glucose' ? currentTranscript || (isListening ? <span className="text-text-secondary dark:text-slate-400">Listening...</span> : '') : ''}</p>
-
-                    </div>
-                )}
-                {glucoseVoiceStep === 'confirm' && glucoseParsedData && (
-                    <div className="p-5 bg-primary/5 dark:bg-primary/10 rounded-card border-2 border-primary/30 dark:border-primary/40">
-                        <div className="text-center">
-                            <p className="text-text-secondary dark:text-slate-400 font-medium">Is this correct?</p>
-                            <p className="text-4xl font-bold text-primary dark:text-primary-light my-2">{glucoseParsedData.value} <span className="text-lg font-normal text-text-light dark:text-slate-400">{unit}</span></p>
-                            <p className="text-text-secondary dark:text-slate-400 capitalize font-medium">{glucoseParsedData.context.replace('_', ' ')}</p>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3 mt-6">
-                            <button type="button" onClick={resetGlucoseState} className="w-full bg-white dark:bg-slate-700 border-2 border-primary/20 dark:border-slate-600 text-text-primary dark:text-slate-100 font-semibold py-3 rounded-button hover:bg-primary/5 dark:hover:bg-slate-600 hover:border-primary dark:hover:border-primary-light transition-all duration-300 shadow-card">Start Over</button>
-                            <button type="button" onClick={handleVoiceGlucoseSubmit} className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300">Confirm & Save</button>
-                        </div>
-                    </div>
-                )}
-            </div>
-        );
-
-        const renderManualContent = () => (
-            <form onSubmit={handleManualGlucoseSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label htmlFor="glucose-value" className="block text-sm font-semibold text-text-primary dark:text-slate-100 mb-2">Value ({unit})</label>
-                        <input type="number" id="glucose-value" value={manualGlucoseValue} onChange={e => setManualGlucoseValue(e.target.value)} step={unit === 'mmol/L' ? '0.1' : '1'} required className="block w-full bg-white dark:bg-slate-700 text-text-primary dark:text-slate-100 placeholder:text-text-light dark:placeholder:text-slate-400 rounded-button border-2 border-primary/20 dark:border-slate-600 shadow-sm focus:border-primary dark:focus:border-primary-light focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300 p-3" />
-                    </div>
-                    <div>
-                        <label htmlFor="glucose-context" className="block text-sm font-semibold text-text-primary dark:text-slate-100 mb-2">Context</label>
-                        <select id="glucose-context" value={manualGlucoseContext} onChange={e => setManualGlucoseContext(e.target.value as GlucoseReading['context'])} className="block w-full bg-white dark:bg-slate-700 text-text-primary dark:text-slate-100 rounded-button border-2 border-primary/20 dark:border-slate-600 focus:border-primary dark:focus:border-primary-light focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300 px-3 py-3">
-                            <option value="random">Random</option>
-                            <option value="fasting">Fasting</option>
-                            <option value="before_meal">Before Meal</option>
-                            <option value="after_meal">After Meal</option>
-                            <option value="bedtime">Bedtime</option>
-                        </select>
-                    </div>
-                </div>
-                {error && <p className="text-accent-pink text-sm text-center font-medium">{error}</p>}
-                <button type="submit" className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300">Save Glucose</button>
-            </form>
-        );
-
-        const renderPhotoContent = () => (
-            <div>
-                {glucosePhotoStep === 'select_photo' && (
-                    <div>
-                        {!glucosePreviewUrl ? (
-                            <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <button type="button" onClick={() => { glucoseFileInputRef.current?.setAttribute('capture', 'environment'); glucoseFileInputRef.current?.click(); }} className="border-2 border-dashed border-primary/30 dark:border-primary/40 rounded-card p-8 text-center text-text-secondary dark:text-slate-400 hover:bg-primary/5 dark:hover:bg-primary/10 hover:border-primary dark:hover:border-primary-light transition-all duration-300 flex flex-col items-center justify-center">
-                                    <CameraIcon className="w-10 h-10 mx-auto text-primary dark:text-primary-light mb-2" />
-                                    <span>Take Picture</span>
-                                </button>
-                                <button type="button" onClick={() => { glucoseFileInputRef.current?.removeAttribute('capture'); glucoseFileInputRef.current?.click(); }} className="border-2 border-dashed border-primary/30 dark:border-primary/40 rounded-card p-8 text-center text-text-secondary dark:text-slate-400 hover:bg-primary/5 dark:hover:bg-primary/10 hover:border-primary dark:hover:border-primary-light transition-all duration-300 flex flex-col items-center justify-center">
-                                    <UploadIcon className="w-10 h-10 mx-auto text-primary dark:text-primary-light mb-2" />
-                                    <span>Upload Photo</span>
-                                </button>
-                                <input type="file" accept="image/*" ref={glucoseFileInputRef} onChange={handleGlucoseFileChange} className="hidden" />
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                <img src={glucosePreviewUrl} alt="Glucose meter preview" className="rounded-card w-full max-h-48 object-contain shadow-card" />
-                                <button type="button" onClick={handleGlucosePhotoAnalyze} disabled={isLoading} className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300 disabled:from-slate-300 disabled:to-slate-300 flex items-center justify-center">
-                                    {isLoading ? <Spinner /> : 'Analyze Reading'}
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                )}
-                {glucosePhotoStep === 'confirm' && glucoseParsedData && (
-                     <div className="mt-4 p-5 bg-primary/5 dark:bg-primary/10 rounded-card border-2 border-primary/30 dark:border-primary/40">
-                        <div className="text-center">
-                            <p className="text-text-secondary dark:text-slate-400 font-medium">Is this correct?</p>
-                            <p className="text-4xl font-bold text-primary dark:text-primary-light my-2">{glucoseParsedData.value} <span className="text-lg font-normal text-text-light dark:text-slate-400">{unit}</span></p>
-                            <p className="text-text-secondary dark:text-slate-400 capitalize font-medium">{glucoseParsedData.context.replace('_', ' ')}</p>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3 mt-6">
-                            <button type="button" onClick={resetGlucoseState} className="w-full bg-white dark:bg-slate-700 border-2 border-primary/20 dark:border-slate-600 text-text-primary dark:text-slate-100 font-semibold py-3 rounded-button hover:bg-primary/5 dark:hover:bg-slate-600 hover:border-primary dark:hover:border-primary-light transition-all duration-300 shadow-card">
-                                Start Over
-                            </button>
-                            <button type="button" onClick={handlePhotoGlucoseSubmit} className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300">
-                                Confirm & Save
-                            </button>
-                        </div>
-                    </div>
-                )}
-            </div>
-        );
-
         return (
             <div>
-                <div className="flex justify-center items-center rounded-card bg-primary/5 dark:bg-slate-700 p-1 mb-4 border-2 border-primary/20 dark:border-slate-600">
-                    <button type="button" onClick={() => { setGlucoseLogMode('voice'); setError(''); }} className={`px-3 py-1.5 text-sm font-semibold rounded-button flex items-center space-x-2 transition-all duration-300 ${glucoseLogMode === 'voice' ? 'bg-white dark:bg-slate-600 text-primary dark:text-primary-light shadow-card' : 'text-text-light dark:text-slate-400 hover:bg-white dark:hover:bg-slate-600 hover:bg-opacity-50'}`}><MicIcon className="w-4 h-4"/><span>Voice</span></button>
-                    <button type="button" onClick={() => { setGlucoseLogMode('manual'); setError(''); }} className={`px-3 py-1.5 text-sm font-semibold rounded-button flex items-center space-x-2 transition-all duration-300 ${glucoseLogMode === 'manual' ? 'bg-white dark:bg-slate-600 text-primary dark:text-primary-light shadow-card' : 'text-text-light dark:text-slate-400 hover:bg-white dark:hover:bg-slate-600 hover:bg-opacity-50'}`}><PencilIcon className="w-4 h-4"/><span>Manual</span></button>
-                    <button type="button" onClick={() => { setGlucoseLogMode('photo'); setError(''); }} className={`px-3 py-1.5 text-sm font-semibold rounded-button flex items-center space-x-2 transition-all duration-300 ${glucoseLogMode === 'photo' ? 'bg-white dark:bg-slate-600 text-primary dark:text-primary-light shadow-card' : 'text-text-light dark:text-slate-400 hover:bg-white dark:hover:bg-slate-600 hover:bg-opacity-50'}`}><CameraIcon className="w-4 h-4"/><span>Photo</span></button>
-                </div>
                 {error && !isLoading && <p className="text-accent-pink text-center mt-4 text-sm mb-2 font-medium">{error}</p>}
-                {glucoseLogMode === 'voice' && renderVoiceContent()}
-                {glucoseLogMode === 'manual' && renderManualContent()}
-                {glucoseLogMode === 'photo' && renderPhotoContent()}
+                <form onSubmit={handleManualGlucoseSubmit} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label htmlFor="glucose-value" className="block text-sm font-semibold text-text-primary dark:text-slate-100 mb-2">Value ({unit})</label>
+                            <input type="number" id="glucose-value" value={manualGlucoseValue} onChange={e => setManualGlucoseValue(e.target.value)} step={unit === 'mmol/L' ? '0.1' : '1'} required className="block w-full bg-white dark:bg-slate-700 text-text-primary dark:text-slate-100 placeholder:text-text-light dark:placeholder:text-slate-400 rounded-button border-2 border-primary/20 dark:border-slate-600 shadow-sm focus:border-primary dark:focus:border-primary-light focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300 p-3" />
+                        </div>
+                        <div>
+                            <label htmlFor="glucose-context" className="block text-sm font-semibold text-text-primary dark:text-slate-100 mb-2">Context</label>
+                            <select id="glucose-context" value={manualGlucoseContext} onChange={e => setManualGlucoseContext(e.target.value as GlucoseReading['context'])} className="block w-full bg-white dark:bg-slate-700 text-text-primary dark:text-slate-100 rounded-button border-2 border-primary/20 dark:border-slate-600 focus:border-primary dark:focus:border-primary-light focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300 px-3 py-3">
+                                <option value="random">Random</option>
+                                <option value="fasting">Fasting</option>
+                                <option value="before_meal">Before Meal</option>
+                                <option value="after_meal">After Meal</option>
+                                <option value="bedtime">Bedtime</option>
+                            </select>
+                        </div>
+                    </div>
+                    {error && <p className="text-accent-pink text-sm text-center font-medium">{error}</p>}
+                    <button type="submit" className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300">Save Glucose</button>
+                </form>
             </div>
         );
     };
@@ -1105,189 +503,52 @@ const LateEntryForm: React.FC<LateEntryFormProps> = ({ onAddGlucose, onAddMeal, 
     }
     
     const renderWeightContent = () => {
-        const renderVoiceContent = () => (
-            <div>
-                {weightVoiceStep === 'say_reading' && (
-                    <div className="text-center py-4">
-                        <p className="text-text-secondary dark:text-slate-400 mb-4 font-medium">{isListening && listeningForRef.current === 'weight' ? 'Tap icon to stop.' : 'Tap icon and say your weight.'}</p>
-                        <button type="button" onClick={handleWeightToggleListen} disabled={isLoading} className={`mx-auto w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 ${isListening && listeningForRef.current === 'weight' ? 'bg-accent-pink text-white shadow-lg' : 'bg-gradient-to-br from-primary to-primary-dark text-white hover:shadow-fab'} disabled:bg-slate-300`}>{isLoading ? <Spinner /> : (isListening && listeningForRef.current === 'weight' ? <SquareIcon className="w-7 h-7" /> : <MicIcon className="w-8 h-8" />)}</button>
-                        <p className="text-text-primary dark:text-slate-100 mt-4 min-h-[24px] px-2">{listeningForRef.current === 'weight' ? currentTranscript || (isListening ? <span className="text-text-secondary dark:text-slate-400">Listening...</span> : '') : ''}</p>
-                    </div>
-                )}
-                {weightVoiceStep === 'confirm' && weightParsedData && (
-                    <div className="p-5 bg-primary/5 dark:bg-primary/10 rounded-card border-2 border-primary/30 dark:border-primary/40">
-                        <div className="text-center">
-                            <p className="text-text-secondary dark:text-slate-400 font-medium">Is this correct?</p>
-                            <p className="text-4xl font-bold text-accent-orange my-2">{weightParsedData.value} <span className="text-lg font-normal text-text-light dark:text-slate-400">{weightParsedData.unit}</span></p>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3 mt-6">
-                            <button type="button" onClick={resetWeightState} className="w-full bg-white dark:bg-slate-700 border-2 border-primary/20 dark:border-slate-600 text-text-primary dark:text-slate-100 font-semibold py-3 rounded-button hover:bg-primary/5 dark:hover:bg-slate-600 hover:border-primary dark:hover:border-primary-light transition-all duration-300 shadow-card">Start Over</button>
-                            <button type="button" onClick={handleVoiceWeightSubmit} className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300">Confirm & Save</button>
-                        </div>
-                    </div>
-                )}
-            </div>
-        );
-
-        const renderManualContent = () => (
-            <form onSubmit={handleManualWeightSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label htmlFor="weight-value" className="block text-sm font-semibold text-text-primary dark:text-slate-100 mb-2">Weight</label>
-                        <input type="number" id="weight-value" value={manualWeightValue} onChange={e => setManualWeightValue(e.target.value)} step="0.1" required className="block w-full bg-white dark:bg-slate-700 text-text-primary dark:text-slate-100 rounded-button border-2 border-primary/20 dark:border-slate-600 p-3 focus:border-primary dark:focus:border-primary-light focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300" />
-                    </div>
-                    <div>
-                        <label htmlFor="weight-unit" className="block text-sm font-semibold text-text-primary dark:text-slate-100 mb-2">Unit</label>
-                        <select id="weight-unit" value={manualWeightUnit} onChange={e => setManualWeightUnit(e.target.value as 'kg' | 'lbs')} className="block w-full bg-white dark:bg-slate-700 text-text-primary dark:text-slate-100 rounded-button border-2 border-primary/20 dark:border-slate-600 p-3 focus:border-primary dark:focus:border-primary-light focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300">
-                            <option value="kg">kg</option>
-                            <option value="lbs">lbs</option>
-                        </select>
-                    </div>
-                </div>
-                {error && <p className="text-accent-pink text-sm text-center font-medium">{error}</p>}
-                <button type="submit" className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300">Save Weight</button>
-            </form>
-        );
-
-        const renderPhotoContent = () => (
-            <div>
-                {weightPhotoStep === 'select_photo' && (
-                    <div>
-                        {!weightPreviewUrl ? (
-                             <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <button type="button" onClick={() => { weightFileInputRef.current?.setAttribute('capture', 'environment'); weightFileInputRef.current?.click(); }} className="border-2 border-dashed border-primary/30 dark:border-primary/40 rounded-card p-8 text-center text-text-secondary dark:text-slate-400 hover:bg-primary/5 dark:hover:bg-primary/10 hover:border-primary dark:hover:border-primary-light transition-all duration-300 flex flex-col items-center justify-center"><CameraIcon className="w-10 h-10 mx-auto text-primary dark:text-primary-light mb-2" /><span>Take Picture</span></button>
-                                <button type="button" onClick={() => { weightFileInputRef.current?.removeAttribute('capture'); weightFileInputRef.current?.click(); }} className="border-2 border-dashed border-primary/30 dark:border-primary/40 rounded-card p-8 text-center text-text-secondary dark:text-slate-400 hover:bg-primary/5 dark:hover:bg-primary/10 hover:border-primary dark:hover:border-primary-light transition-all duration-300 flex flex-col items-center justify-center"><UploadIcon className="w-10 h-10 mx-auto text-primary dark:text-primary-light mb-2" /><span>Upload Photo</span></button>
-                                <input type="file" accept="image/*" ref={weightFileInputRef} onChange={handleWeightFileChange} className="hidden" />
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                <img src={weightPreviewUrl} alt="Weight scale preview" className="rounded-card w-full max-h-48 object-contain shadow-card" />
-                                <button type="button" onClick={handleWeightPhotoAnalyze} disabled={isLoading} className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300 disabled:from-slate-300 disabled:to-slate-300 flex items-center justify-center">{isLoading ? <Spinner /> : 'Analyze Weight'}</button>
-                            </div>
-                        )}
-                    </div>
-                )}
-                {weightPhotoStep === 'confirm' && weightParsedData && (
-                     <div className="p-5 bg-primary/5 dark:bg-primary/10 rounded-card border-2 border-primary/30 dark:border-primary/40">
-                        <div className="text-center">
-                            <p className="text-text-secondary dark:text-slate-400 font-medium">Is this correct?</p>
-                            <p className="text-4xl font-bold text-accent-orange my-2">{weightParsedData.value} <span className="text-lg font-normal text-text-light dark:text-slate-400">{weightParsedData.unit}</span></p>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3 mt-6">
-                            <button type="button" onClick={resetWeightState} className="w-full bg-white dark:bg-slate-700 border-2 border-primary/20 dark:border-slate-600 text-text-primary dark:text-slate-100 font-semibold py-3 rounded-button hover:bg-primary/5 dark:hover:bg-slate-600 hover:border-primary dark:hover:border-primary-light transition-all duration-300 shadow-card">Start Over</button>
-                            <button type="button" onClick={handlePhotoWeightSubmit} className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300">Confirm & Save</button>
-                        </div>
-                    </div>
-                )}
-            </div>
-        );
-
         return (
             <div>
-                <div className="flex justify-center items-center rounded-card bg-primary/5 dark:bg-slate-700 p-1 mb-4 border-2 border-primary/20 dark:border-slate-600">
-                    <button type="button" onClick={() => { setWeightLogMode('voice'); setError(''); }} className={`px-3 py-1.5 text-sm font-semibold rounded-button flex items-center space-x-2 transition-all duration-300 ${weightLogMode === 'voice' ? 'bg-white dark:bg-slate-600 text-primary dark:text-primary-light shadow-card' : 'text-text-light dark:text-slate-400 hover:bg-white dark:hover:bg-slate-600 hover:bg-opacity-50'}`}><MicIcon className="w-4 h-4"/><span>Voice</span></button>
-                    <button type="button" onClick={() => { setWeightLogMode('manual'); setError(''); }} className={`px-3 py-1.5 text-sm font-semibold rounded-button flex items-center space-x-2 transition-all duration-300 ${weightLogMode === 'manual' ? 'bg-white dark:bg-slate-600 text-primary dark:text-primary-light shadow-card' : 'text-text-light dark:text-slate-400 hover:bg-white dark:hover:bg-slate-600 hover:bg-opacity-50'}`}><PencilIcon className="w-4 h-4"/><span>Manual</span></button>
-                    <button type="button" onClick={() => { setWeightLogMode('photo'); setError(''); }} className={`px-3 py-1.5 text-sm font-semibold rounded-button flex items-center space-x-2 transition-all duration-300 ${weightLogMode === 'photo' ? 'bg-white dark:bg-slate-600 text-primary dark:text-primary-light shadow-card' : 'text-text-light dark:text-slate-400 hover:bg-white dark:hover:bg-slate-600 hover:bg-opacity-50'}`}><CameraIcon className="w-4 h-4"/><span>Photo</span></button>
-                </div>
                 {error && !isLoading && <p className="text-accent-pink text-center mt-4 text-sm mb-2 font-medium">{error}</p>}
-                {weightLogMode === 'voice' && renderVoiceContent()}
-                {weightLogMode === 'manual' && renderManualContent()}
-                {weightLogMode === 'photo' && renderPhotoContent()}
+                <form onSubmit={handleManualWeightSubmit} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label htmlFor="weight-value" className="block text-sm font-semibold text-text-primary dark:text-slate-100 mb-2">Weight</label>
+                            <input type="number" id="weight-value" value={manualWeightValue} onChange={e => setManualWeightValue(e.target.value)} step="0.1" required className="block w-full bg-white dark:bg-slate-700 text-text-primary dark:text-slate-100 rounded-button border-2 border-primary/20 dark:border-slate-600 p-3 focus:border-primary dark:focus:border-primary-light focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300" />
+                        </div>
+                        <div>
+                            <label htmlFor="weight-unit" className="block text-sm font-semibold text-text-primary dark:text-slate-100 mb-2">Unit</label>
+                            <select id="weight-unit" value={manualWeightUnit} onChange={e => setManualWeightUnit(e.target.value as 'kg' | 'lbs')} className="block w-full bg-white dark:bg-slate-700 text-text-primary dark:text-slate-100 rounded-button border-2 border-primary/20 dark:border-slate-600 p-3 focus:border-primary dark:focus:border-primary-light focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300">
+                                <option value="kg">kg</option>
+                                <option value="lbs">lbs</option>
+                            </select>
+                        </div>
+                    </div>
+                    {error && <p className="text-accent-pink text-sm text-center font-medium">{error}</p>}
+                    <button type="submit" className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300">Save Weight</button>
+                </form>
             </div>
         );
     };
 
     const renderBloodPressureContent = () => {
-         const renderVoiceContent = () => (
-            <div>
-                {bpVoiceStep === 'say_reading' && (
-                    <div className="text-center py-4">
-                        <p className="text-text-secondary mb-4 font-medium">{isListening && listeningForRef.current === 'blood_pressure' ? 'Tap icon to stop.' : 'Tap icon and say your reading.'}</p>
-                        <button type="button" onClick={handleBpToggleListen} disabled={isLoading} className={`mx-auto w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 ${isListening && listeningForRef.current === 'blood_pressure' ? 'bg-accent-pink text-white shadow-lg' : 'bg-gradient-to-br from-primary to-primary-dark text-white hover:shadow-fab'} disabled:bg-slate-300`}>{isLoading ? <Spinner /> : (isListening && listeningForRef.current === 'blood_pressure' ? <SquareIcon className="w-7 h-7" /> : <MicIcon className="w-8 h-8" />)}</button>
-                        <p className="text-text-primary mt-4 min-h-[24px] px-2">{listeningForRef.current === 'blood_pressure' ? currentTranscript || (isListening ? <span className="text-text-secondary">Listening...</span> : '') : ''}</p>
-                    </div>
-                )}
-                {bpVoiceStep === 'confirm' && bpParsedData && (
-                    <div className="p-5 bg-primary/5 rounded-card border-2 border-primary/30">
-                        <div className="text-center">
-                            <p className="text-text-secondary font-medium">Is this correct?</p>
-                            <p className="text-4xl font-bold text-accent-pink my-2">{bpParsedData.systolic} / {bpParsedData.diastolic} <span className="text-lg font-normal text-text-light">mmHg</span></p>
-                            <p className="text-text-secondary font-medium">Pulse: {bpParsedData.pulse} bpm</p>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3 mt-6">
-                            <button type="button" onClick={resetBpState} className="w-full bg-white border-2 border-primary/20 text-text-primary font-semibold py-3 rounded-button hover:bg-primary/5 hover:border-primary transition-all duration-300 shadow-card">Start Over</button>
-                            <button type="button" onClick={handleVoiceBpSubmit} className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300">Confirm & Save</button>
-                        </div>
-                    </div>
-                )}
-            </div>
-        );
-
-        const renderManualContent = () => (
-             <form onSubmit={handleManualBpSubmit} className="space-y-4">
-                <div className="grid grid-cols-3 gap-3">
-                    <div>
-                        <label htmlFor="bp-sys" className="block text-sm font-semibold text-text-primary dark:text-slate-100 mb-2">Systolic</label>
-                        <input type="number" id="bp-sys" value={manualSystolic} onChange={e => setManualSystolic(e.target.value)} required className="block w-full p-3 bg-white dark:bg-slate-700 text-text-primary dark:text-slate-100 border-2 border-primary/20 dark:border-slate-600 rounded-button focus:border-primary dark:focus:border-primary-light focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300" />
-                    </div>
-                    <div>
-                        <label htmlFor="bp-dia" className="block text-sm font-semibold text-text-primary dark:text-slate-100 mb-2">Diastolic</label>
-                        <input type="number" id="bp-dia" value={manualDiastolic} onChange={e => setManualDiastolic(e.target.value)} required className="block w-full p-3 bg-white dark:bg-slate-700 text-text-primary dark:text-slate-100 border-2 border-primary/20 dark:border-slate-600 rounded-button focus:border-primary dark:focus:border-primary-light focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300" />
-                    </div>
-                    <div>
-                        <label htmlFor="bp-pulse" className="block text-sm font-semibold text-text-primary dark:text-slate-100 mb-2">Pulse</label>
-                        <input type="number" id="bp-pulse" value={manualPulse} onChange={e => setManualPulse(e.target.value)} required className="block w-full p-3 bg-white dark:bg-slate-700 text-text-primary dark:text-slate-100 border-2 border-primary/20 dark:border-slate-600 rounded-button focus:border-primary dark:focus:border-primary-light focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300" />
-                    </div>
-                </div>
-                 {error && <p className="text-accent-pink text-sm text-center font-medium">{error}</p>}
-                <button type="submit" className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300">Save Blood Pressure</button>
-            </form>
-        );
-
-        const renderPhotoContent = () => (
-            <div>
-                 {bpPhotoStep === 'select_photo' && (
-                    <div>
-                        {!bpPreviewUrl ? (
-                             <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <button type="button" onClick={() => { bpFileInputRef.current?.setAttribute('capture', 'environment'); bpFileInputRef.current?.click(); }} className="border-2 border-dashed border-primary/30 dark:border-primary/40 rounded-card p-8 text-center text-text-secondary dark:text-slate-400 hover:bg-primary/5 dark:hover:bg-primary/10 hover:border-primary dark:hover:border-primary-light transition-all duration-300 flex flex-col items-center justify-center"><CameraIcon className="w-10 h-10 mx-auto text-primary dark:text-primary-light mb-2" /><span>Take Picture</span></button>
-                                <button type="button" onClick={() => { bpFileInputRef.current?.removeAttribute('capture'); bpFileInputRef.current?.click(); }} className="border-2 border-dashed border-primary/30 dark:border-primary/40 rounded-card p-8 text-center text-text-secondary dark:text-slate-400 hover:bg-primary/5 dark:hover:bg-primary/10 hover:border-primary dark:hover:border-primary-light transition-all duration-300 flex flex-col items-center justify-center"><UploadIcon className="w-10 h-10 mx-auto text-primary dark:text-primary-light mb-2" /><span>Upload Photo</span></button>
-                                <input type="file" accept="image/*" ref={bpFileInputRef} onChange={handleBpFileChange} className="hidden" />
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                <img src={bpPreviewUrl} alt="Blood pressure monitor preview" className="rounded-card w-full max-h-48 object-contain shadow-card" />
-                                <button type="button" onClick={handleBpPhotoAnalyze} disabled={isLoading} className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300 disabled:from-slate-300 disabled:to-slate-300 flex items-center justify-center">{isLoading ? <Spinner /> : 'Analyze Reading'}</button>
-                            </div>
-                        )}
-                    </div>
-                )}
-                {bpPhotoStep === 'confirm' && bpParsedData && (
-                     <div className="p-5 bg-primary/5 dark:bg-primary/10 rounded-card border-2 border-primary/30 dark:border-primary/40">
-                        <div className="text-center">
-                            <p className="text-text-secondary dark:text-slate-400 font-medium">Is this correct?</p>
-                            <p className="text-4xl font-bold text-accent-pink my-2">{bpParsedData.systolic} / {bpParsedData.diastolic} <span className="text-lg font-normal text-text-light dark:text-slate-400">mmHg</span></p>
-                            <p className="text-text-secondary dark:text-slate-400 font-medium">Pulse: {bpParsedData.pulse} bpm</p>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3 mt-6">
-                            <button type="button" onClick={resetBpState} className="w-full bg-white dark:bg-slate-700 border-2 border-primary/20 dark:border-slate-600 text-text-primary dark:text-slate-100 font-semibold py-3 rounded-button hover:bg-primary/5 dark:hover:bg-slate-600 hover:border-primary dark:hover:border-primary-light transition-all duration-300 shadow-card">Start Over</button>
-                            <button type="button" onClick={handlePhotoBpSubmit} className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300">Confirm & Save</button>
-                        </div>
-                    </div>
-                )}
-            </div>
-        );
-
         return (
             <div>
-                 {/* Voice removed - saying three separate numbers is cumbersome */}
-                 <div className="flex justify-center items-center rounded-card bg-primary/5 dark:bg-slate-700 p-1 mb-4 border-2 border-primary/20 dark:border-slate-600">
-                    <button type="button" onClick={() => { setBpLogMode('manual'); setError(''); }} className={`px-3 py-1.5 text-sm font-semibold rounded-button flex items-center space-x-2 transition-all duration-300 ${bpLogMode === 'manual' ? 'bg-white dark:bg-slate-600 text-primary dark:text-primary-light shadow-card' : 'text-text-light dark:text-slate-400 hover:bg-white dark:hover:bg-slate-600 hover:bg-opacity-50'}`}><PencilIcon className="w-4 h-4"/><span>Manual</span></button>
-                    <button type="button" onClick={() => { setBpLogMode('photo'); setError(''); }} className={`px-3 py-1.5 text-sm font-semibold rounded-button flex items-center space-x-2 transition-all duration-300 ${bpLogMode === 'photo' ? 'bg-white dark:bg-slate-600 text-primary dark:text-primary-light shadow-card' : 'text-text-light dark:text-slate-400 hover:bg-white dark:hover:bg-slate-600 hover:bg-opacity-50'}`}><CameraIcon className="w-4 h-4"/><span>Photo</span></button>
-                </div>
                 {error && !isLoading && <p className="text-accent-pink text-center mt-4 text-sm mb-2 font-medium">{error}</p>}
-                {bpLogMode === 'manual' && renderManualContent()}
-                {bpLogMode === 'photo' && renderPhotoContent()}
+                <form onSubmit={handleManualBpSubmit} className="space-y-4">
+                    <div className="grid grid-cols-3 gap-3">
+                        <div>
+                            <label htmlFor="bp-sys" className="block text-sm font-semibold text-text-primary dark:text-slate-100 mb-2">Systolic</label>
+                            <input type="number" id="bp-sys" value={manualSystolic} onChange={e => setManualSystolic(e.target.value)} required className="block w-full p-3 bg-white dark:bg-slate-700 text-text-primary dark:text-slate-100 border-2 border-primary/20 dark:border-slate-600 rounded-button focus:border-primary dark:focus:border-primary-light focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300" />
+                        </div>
+                        <div>
+                            <label htmlFor="bp-dia" className="block text-sm font-semibold text-text-primary dark:text-slate-100 mb-2">Diastolic</label>
+                            <input type="number" id="bp-dia" value={manualDiastolic} onChange={e => setManualDiastolic(e.target.value)} required className="block w-full p-3 bg-white dark:bg-slate-700 text-text-primary dark:text-slate-100 border-2 border-primary/20 dark:border-slate-600 rounded-button focus:border-primary dark:focus:border-primary-light focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300" />
+                        </div>
+                        <div>
+                            <label htmlFor="bp-pulse" className="block text-sm font-semibold text-text-primary dark:text-slate-100 mb-2">Pulse</label>
+                            <input type="number" id="bp-pulse" value={manualPulse} onChange={e => setManualPulse(e.target.value)} required className="block w-full p-3 bg-white dark:bg-slate-700 text-text-primary dark:text-slate-100 border-2 border-primary/20 dark:border-slate-600 rounded-button focus:border-primary dark:focus:border-primary-light focus:bg-white dark:focus:bg-slate-700 focus:ring-4 focus:ring-primary focus:ring-opacity-10 transition-all duration-300" />
+                        </div>
+                    </div>
+                    {error && <p className="text-accent-pink text-sm text-center font-medium">{error}</p>}
+                    <button type="submit" className="w-full bg-gradient-to-br from-primary to-primary-dark text-white font-semibold py-3 rounded-button hover:shadow-fab transition-all duration-300">Save Blood Pressure</button>
+                </form>
             </div>
         );
     };
